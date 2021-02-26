@@ -1,0 +1,22 @@
+# ===================================================
+# meta infos
+# ===================================================
+meta:
+  project: ads-service-modules
+  include:
+    - dobi.yaml
+    - version.yaml
+    - alm-location-module/dobi.yaml
+
+# ===================================================
+# alias
+# ===================================================
+
+alias=build:
+  tasks:
+    - build-alm-location-module
+    - build-and-push-image-alm-location-module
+  annotations:
+    description: "[alias] build (and push) all"
+    tags:
+      - alias

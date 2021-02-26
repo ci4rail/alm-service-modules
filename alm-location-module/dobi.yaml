@@ -1,0 +1,50 @@
+# ===================================================
+# mounts
+# ===================================================
+mount=mount-alm-location-module-src:
+  bind: "alm-location-module"
+  path: "/src"
+  read-only: false
+
+mount=mount-alm-location-module-bin:
+  bind: "bin/"
+  path: "/install"
+  read-only: false
+
+# ===================================================
+# jobs
+# ===================================================
+
+job=build-alm-location-module:
+  use: image-go-builder
+  command: bash -c 'cd /src && make -j${nproc}'
+  mounts:
+    - mount-alm-location-module-src
+    - mount-alm-location-module-bin
+    - mount-go-pkg
+  sources:
+    - alm-location-module
+  artifact:
+    - bin/alm-location-module
+  user: "{user.uid}:{user.gid}"
+  env:
+    - VERSION={env.GitVersion_Sha}
+    - BIN_DIR=/install
+    - GOCACHE=/tmp/cache
+  annotations:
+    description: "-> build alm-location-module"
+    tags:
+      - build
+
+job=build-and-push-image-alm-location-module:
+  use: dind-buildx
+  mounts:
+    - mount-alm-location-module-src
+    - mount-docker-socket
+    - mount-docker-config
+  interactive: true
+  command: sh -c "cd /src;
+           docker buildx build --push --platform linux/arm64,linux/amd64 --tag ci4rail/alm-location-module:${VERSION} ."
+  env:
+   - DOCKER_DRIVER=overlay2
+   - VERSION={env.GitVersion_BranchVersion}
