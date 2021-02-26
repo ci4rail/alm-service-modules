@@ -18,7 +18,7 @@ package main
 
 import (
 	"alm-location-module/internal/message"
-	"alm-location-module/internal/message/version"
+	"alm-location-module/internal/version"
 	"encoding/json"
 	"fmt"
 	"log"
