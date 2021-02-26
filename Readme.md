@@ -1,4 +1,4 @@
-# ads-service-modules
+# alm-service-modules
 
 # Local build with dobi
 
@@ -8,7 +8,7 @@ Make sure that you manually run `docker login` for user `ci4rail` on your host s
 
 Setting the pipeline:
 ```
-$ fly -t prod set-pipeline -p ads-service-modules -c pipeline.yaml -l ci/config.yaml  -l ci/credentials.yaml
+$ fly -t prod set-pipeline -p alm-service-modules -c pipeline.yaml -l ci/config.yaml  -l ci/credentials.yaml
 ```
 
 # Build misc informatin

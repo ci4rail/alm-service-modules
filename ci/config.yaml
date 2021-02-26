@@ -2,12 +2,12 @@
 # Project configuration
 # -----------------------------
 ## Defines the name for the project
-name: ads-service-modules
+name: alm-service-modules
 
 # Git configuration
 # -----------------
 ## Specify the git repository to work with
-git_source: https://github.com/ci4rail/ads-service-modules.git
+git_source: https://github.com/ci4rail/alm-service-modules.git
 ## Specify the git branch to work with
 git_branch: main
 ## This enables/disables ssl verification of the git resource

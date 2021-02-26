@@ -2,7 +2,7 @@
 # meta infos
 # ===================================================
 meta:
-  project: ads-service-modules
+  project: alm-service-modules
   include:
     - dobi.yaml
     - version.yaml
