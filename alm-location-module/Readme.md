@@ -1,6 +1,6 @@
-# ads-service-module
+# alm-location-module
 
-`ads-service-module` is a Azure IoT Hub module that connects and sends events to the Azure IoT Hub.
+`alm-location-module` is a module provides location data.
 
 ## Example usage
 Create a new deployment manifest that contains the module, e.g. `myapplication.yaml`.
