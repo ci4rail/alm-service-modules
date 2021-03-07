@@ -32,13 +32,6 @@ const (
 	defaultUpdateIntervalMs int = 1000
 )
 
-type timePosition struct {
-	Device string    `json:"device"`
-	Time   time.Time `json:"time"`
-	Lat    float64   `json:"lat"`
-	Lon    float64   `json:"lon"`
-}
-
 func main() {
 	log.Printf("alm-location-module version: %s\n", version.Version)
 	updateIntervalMs := defaultUpdateIntervalMs
