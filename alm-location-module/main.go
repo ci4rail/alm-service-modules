@@ -17,15 +17,14 @@ limitations under the License.
 package main
 
 import (
-	"alm-location-module/internal/message"
 	"alm-location-module/internal/version"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"time"
 
+	"github.com/linkedin/goavro/v2"
 	"github.com/nats-io/nats.go"
 )
 
@@ -48,9 +47,13 @@ func main() {
 	}
 
 	natsServer := "nats"
-	natsServerEnv := os.Getenv("NATS_SERVER")
-	if len(natsServerEnv) > 0 {
-		natsServer = natsServerEnv
+	if env := os.Getenv("NATS_SERVER"); len(env) > 0 {
+		natsServer = env
+	}
+
+	deviceID := "null"
+	if env := os.Getenv("IOTEDGE_DEVICEID"); len(env) > 0 {
+		deviceID = env
 	}
 
 	// Connect Options.
@@ -64,25 +67,63 @@ func main() {
 	}
 	defer nc.Close()
 
-	counter := 0
+	// avro schema defintion
+	codec, err := goavro.NewCodec(`
+	{
+		"type": "record",
+		"name": "service.location.gps",
+		"doc": "device location by lat and long",
+		"fields" : [
+		{
+			"name": "device",
+			"type": "string"
+		},
+		{
+			"name": "acqTime",
+			"type": {
+				"type": "int",
+				"doc": "unix timestamp",
+				"logicalType": "timestamp"
+			}
+		},
+		{
+			"name": "lat",
+			"type": "double"
+		},
+		{
+			"name": "lon",
+			"type": "double"
+		}
+		]
+	}`)
+
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	msg := make(map[string]interface{})
+	c := 0
 	for {
-		message := &message.Message{
-			Timestamp: time.Now().Unix(),
-			Payload: message.Payload{
-				Counter: counter,
-			},
-		}
-		counter++
-		j, err := json.Marshal(message)
+
+		// Define avro message content
+		msg["device"] = deviceID
+		msg["acqTime"] = time.Now().Unix()
+		msg["lat"] = float64(c)
+		msg["lon"] = float64(c)
+
+		// Convert native Go form to binary Avro data
+		bin, err := codec.BinaryFromNative(nil, msg)
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(err)
 		}
-		err = nc.Publish("service.location", j)
+
+		err = nc.Publish("service.location", bin)
 		if err != nil {
 			log.Fatalln(err)
 		}
 		time.Sleep(time.Duration(updateIntervalMs) * time.Millisecond)
-		fmt.Printf("Sending value: %d\n", counter)
+		fmt.Printf("Sending value: %d\n", c)
+		c++
 	}
 }
 
