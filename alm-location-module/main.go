@@ -32,10 +32,6 @@ import (
 
 const (
 	defaultUpdateIntervalMs int = 1000
-	maxLat                      = 52.96202350535348
-	minLat                      = 48.096590432731865
-	maxLon                      = 13.22016465625007
-	minLon                      = 7.946727156250071
 )
 
 func main() {
@@ -113,7 +109,7 @@ func main() {
 
 	for {
 		// Define avro message content
-		msg["deviceID"] = deviceID
+		msg["device"] = deviceID
 		msg["acqTime"] = time.Now().Unix()
 		msg["lat"] = lat
 		msg["lon"] = lon
@@ -141,8 +137,9 @@ func main() {
 			log.Fatalln(err)
 		}
 		time.Sleep(time.Duration(updateIntervalMs) * time.Millisecond)
-		randLat := minLat + rand.Float64()*(maxLat-minLat)
-		randLon := minLon + rand.Float64()*(maxLon-minLon)
+		rand.Seed(time.Now().UnixNano())
+		randLat := -0.05 + rand.Float64()*(0.1)
+		randLon := -0.05 + rand.Float64()*(0.1)
 		lat += randLat
 		lon += randLon
 		fmt.Printf("Sending value: %f,%f\n", lat, lon)
