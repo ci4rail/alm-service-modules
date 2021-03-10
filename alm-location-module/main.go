@@ -18,8 +18,10 @@ package main
 
 import (
 	"alm-location-module/internal/version"
+	"bytes"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"strconv"
 	"time"
@@ -102,28 +104,45 @@ func main() {
 	}
 
 	msg := make(map[string]interface{})
-	c := 0
-	for {
+	lat := 49.460983
+	lon := 11.061859
 
+	for {
 		// Define avro message content
 		msg["device"] = deviceID
 		msg["acqTime"] = time.Now().Unix()
-		msg["lat"] = float64(c)
-		msg["lon"] = float64(c)
+		msg["lat"] = lat
+		msg["lon"] = lon
 
-		// Convert native Go form to binary Avro data
-		bin, err := codec.BinaryFromNative(nil, msg)
+		bin := new(bytes.Buffer)
 		if err != nil {
-			fmt.Println(err)
+			log.Fatalf("Failed to create event.avro file: %v", err)
 		}
 
-		err = nc.Publish("service.location", bin)
+		ocfw, err := goavro.NewOCFWriter(goavro.OCFConfig{
+			W:     bin,
+			Codec: codec,
+		})
+		if err != nil {
+			log.Fatalf("Failed to create the OCF Writer: %v", err)
+		}
+
+		err = ocfw.Append([]interface{}{msg})
+		if err != nil {
+			log.Fatalf("Failed to append to bin: %v", err)
+		}
+
+		err = nc.Publish("service.location", bin.Bytes())
 		if err != nil {
 			log.Fatalln(err)
 		}
 		time.Sleep(time.Duration(updateIntervalMs) * time.Millisecond)
-		fmt.Printf("Sending value: %d\n", c)
-		c++
+		rand.Seed(time.Now().UnixNano())
+		randLat := -0.05 + rand.Float64()*(0.1)
+		randLon := -0.05 + rand.Float64()*(0.1)
+		lat += randLat
+		lon += randLon
+		fmt.Printf("Sending value: %f,%f\n", lat, lon)
 	}
 }
 
