@@ -32,6 +32,7 @@ import (
 
 const (
 	defaultUpdateIntervalMs int = 1000
+	delta                       = 0.005
 )
 
 func main() {
@@ -104,8 +105,8 @@ func main() {
 	}
 
 	msg := make(map[string]interface{})
-	lat := 49.460983
-	lon := 11.061859
+	lat := 49.445273
+	lon := 11.082713
 
 	for {
 		// Define avro message content
@@ -138,8 +139,8 @@ func main() {
 		}
 		time.Sleep(time.Duration(updateIntervalMs) * time.Millisecond)
 		rand.Seed(time.Now().UnixNano())
-		randLat := -0.05 + rand.Float64()*(0.1)
-		randLon := -0.05 + rand.Float64()*(0.1)
+		randLat := -delta/2 + rand.Float64()*(delta)
+		randLon := -delta/2 + rand.Float64()*(delta)
 		lat += randLat
 		lon += randLon
 		fmt.Printf("Sending value: %f,%f\n", lat, lon)

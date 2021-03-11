@@ -6,7 +6,7 @@ ENV GOPATH=/go
 ARG VERSION=dev
 
 WORKDIR /go/src/alm-location-module
-RUN make test && VERSION=${VERSION} BIN_DIR=/install make
+RUN VERSION=${VERSION} BIN_DIR=/install make
 
 FROM scratch
 COPY --from=build /install/alm-location-module /alm-location-module
