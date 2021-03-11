@@ -32,7 +32,7 @@ import (
 
 const (
 	defaultUpdateIntervalMs int = 1000
-	delta                       = 0.0016
+	delta                       = 0.005
 )
 
 func main() {
