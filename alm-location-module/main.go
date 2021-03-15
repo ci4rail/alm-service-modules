@@ -33,6 +33,7 @@ import (
 const (
 	defaultUpdateIntervalMs int = 1000
 	delta                       = 0.005
+	connectTimeoutSeconds   int = 30
 )
 
 func main() {
@@ -60,14 +61,24 @@ func main() {
 	}
 
 	// Connect Options.
-	opts := []nats.Option{nats.Name("ads-node-module")}
+	opts := []nats.Option{nats.Name("ads-node-module"), nats.Timeout(30 * time.Second)}
 	opts = setupConnOptions(opts)
+	ncChan := make(chan *nats.Conn)
+	go func() {
+		for i := 0; i < connectTimeoutSeconds; i++ {
+			if nc, err := nats.Connect(natsServer, opts...); err != nil {
+				log.Printf("Connect failed: %s\n", err)
+				log.Printf("Reconnecting to '%s'\n", natsServer)
+			} else {
+				log.Printf("Connected to '%s'\n", natsServer)
+				ncChan <- nc
+				return
+			}
+			time.Sleep(time.Second)
+		}
+	}()
 
-	// Connect to NATS
-	nc, err := nats.Connect(natsServer, opts...)
-	if err != nil {
-		log.Fatal(err)
-	}
+	nc := <-ncChan
 	defer nc.Close()
 
 	// avro schema defintion

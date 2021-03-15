@@ -51,3 +51,7 @@ job=build-and-push-image-alm-location-module:
   env:
    - DOCKER_DRIVER=overlay2
    - VERSION={env.GitVersion_BranchVersion}
+  annotations:
+    description: "-> builds and pushes alm-location-module multiarch docker images"
+    tags:
+      - build
