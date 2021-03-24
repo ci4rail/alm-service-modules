@@ -18,37 +18,40 @@ package main
 
 import (
 	"alm-location-module/internal/version"
+	"alm-location-module/pkg/gpsd"
 	"bytes"
 	"fmt"
 	"log"
-	"math/rand"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/linkedin/goavro/v2"
 	"github.com/nats-io/nats.go"
+	iso8601 "github.com/relvacode/iso8601"
 )
 
 const (
-	defaultUpdateIntervalMs int = 1000
-	delta                       = 0.005
-	connectTimeoutSeconds   int = 30
+	connectTimeoutSeconds int = 30
 )
 
+var (
+	// GpsdHost is defined by running this container with `--add-host=host.docker.internal:host-gateway`
+	gpsdHost = "host.docker.internal:2947"
+)
+
+type position struct {
+	lat       float64
+	lon       float64
+	timestamp time.Time
+}
+
 func main() {
-	log.Printf("alm-location-module version: %s\n", version.Version)
-	updateIntervalMs := defaultUpdateIntervalMs
-	if i := os.Getenv("UPDATE_INTERVAL_MS"); i != "" {
-		interval, err := strconv.Atoi(i)
-		updateIntervalMs = interval
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Info: using update interval in %d milliseconds\n", updateIntervalMs)
-	} else {
-		log.Printf("Info: env UPDATE_INTERVAL_MS. Using default %d\n", updateIntervalMs)
+	gpsdHostEnv := os.Getenv("GPSD_HOST")
+	if len(gpsdHostEnv) > 0 {
+		gpsdHost = gpsdHostEnv
 	}
+
+	log.Printf("alm-location-module version: %s\n", version.Version)
 
 	natsServer := "nats"
 	if env := os.Getenv("NATS_SERVER"); len(env) > 0 {
@@ -60,7 +63,7 @@ func main() {
 		deviceID = env
 	}
 
-	// Connect Options.
+	// Connect Options
 	opts := []nats.Option{nats.Name("ads-node-module"), nats.Timeout(30 * time.Second)}
 	opts = setupConnOptions(opts)
 	ncChan := make(chan *nats.Conn)
@@ -116,15 +119,35 @@ func main() {
 	}
 
 	msg := make(map[string]interface{})
-	lat := 49.445273
-	lon := 11.082713
+
+	newPositionChan := make(chan position)
+	gpsClient, err := gpsd.NewClient(gpsdHost)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	gpsClient.RegisterTpv(func(r interface{}) {
+		tpv := r.(*gpsd.Tpv)
+		t, err := iso8601.Parse([]byte(tpv.Time))
+		if err != nil {
+			fmt.Println(err)
+		}
+		pos := position{
+			lat:       tpv.Lat,
+			lon:       tpv.Lon,
+			timestamp: t,
+		}
+		newPositionChan <- pos
+	})
 
 	for {
+		newPos := <-newPositionChan
+
 		// Define avro message content
 		msg["device"] = deviceID
-		msg["acqTime"] = time.Now().Unix()
-		msg["lat"] = lat
-		msg["lon"] = lon
+		msg["acqTime"] = newPos.timestamp.Unix()
+		msg["lat"] = newPos.lat
+		msg["lon"] = newPos.lon
 
 		bin := new(bytes.Buffer)
 		if err != nil {
@@ -148,13 +171,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		time.Sleep(time.Duration(updateIntervalMs) * time.Millisecond)
-		rand.Seed(time.Now().UnixNano())
-		randLat := -delta/2 + rand.Float64()*(delta)
-		randLon := -delta/2 + rand.Float64()*(delta)
-		lat += randLat
-		lon += randLon
-		fmt.Printf("Sending value: %f,%f\n", lat, lon)
+		fmt.Printf("Sending value: %f,%f\n", newPos.lat, newPos.lon)
 	}
 }
 

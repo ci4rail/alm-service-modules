@@ -1,6 +1,6 @@
 # alm-location-module
 
-`alm-location-module` is a module provides location data.
+`alm-location-module` is a module provides location data by connecting to a `gpsd` server.
 
 ## Example usage
 Create a new deployment manifest that contains the module, e.g. `myapplication.yaml`.

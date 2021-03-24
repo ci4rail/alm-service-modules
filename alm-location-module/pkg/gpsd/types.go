@@ -1,19 +1,5 @@
 package gpsd
 
-// Mode describes the satellite lock state
-type Mode byte
-
-const (
-	// Unknown means there is no usable data
-	Unknown Mode = 0
-	// NoSatFix means that there is no fix yet
-	NoSatFix Mode = 1
-	// Mode2D means that there is a 2D fix
-	Mode2D Mode = 2
-	// Mode3D means that tere is a 3D fix (with height information)
-	Mode3D Mode = 3
-)
-
 // GenericClass is used to determine the class of the incoming messages
 type GenericClass struct {
 	Class string `json:"class"`
@@ -21,8 +7,8 @@ type GenericClass struct {
 
 // Please have a look at https://gpsd.gitlab.io/gpsd/gpsd_json.html#_core_protocol_responses for reference on the meaning
 
-// TpvObj is a Time-Position-Velocity Object
-type TpvObj struct {
+// Tpv is a Time-Position-Velocity Object
+type Tpv struct {
 	Class       string  `json:"class"`
 	Device      string  `json:"device,omitempty"`
 	Mode        float64 `json:"mode"`
@@ -74,25 +60,25 @@ type TpvObj struct {
 	Wspeedt     float64 `json:"wspeedt,omitempty"`
 }
 
-// SkyObj reports a sky view of the GPS satellite positions
-type SkyObj struct {
-	Class      string         `json:"class"`
-	Device     string         `json:"device,omitempty"`
-	Time       string         `json:"time,omitempty"`
-	Gdop       float64        `json:"gdop,omitempty"`
-	Hdop       float64        `json:"hdop,omitempty"`
-	Pdop       float64        `json:"pdop,omitempty"`
-	Tdop       float64        `json:"tdop,omitempty"`
-	Vdop       float64        `json:"vdop,omitempty"`
-	Xdop       float64        `json:"xdop,omitempty"`
-	Ydop       float64        `json:"ydop,omitempty"`
-	Nsat       float64        `json:"nSat,omitempty"`
-	Usat       float64        `json:"uSat,omitempty"`
-	Satellites []SatelliteObj `json:"satellites,omitempty"`
+// Sky reports a sky view of the GPS satellite positions
+type Sky struct {
+	Class      string      `json:"class"`
+	Device     string      `json:"device,omitempty"`
+	Time       string      `json:"time,omitempty"`
+	Gdop       float64     `json:"gdop,omitempty"`
+	Hdop       float64     `json:"hdop,omitempty"`
+	Pdop       float64     `json:"pdop,omitempty"`
+	Tdop       float64     `json:"tdop,omitempty"`
+	Vdop       float64     `json:"vdop,omitempty"`
+	Xdop       float64     `json:"xdop,omitempty"`
+	Ydop       float64     `json:"ydop,omitempty"`
+	Nsat       float64     `json:"nSat,omitempty"`
+	Usat       float64     `json:"uSat,omitempty"`
+	Satellites []Satellite `json:"satellites,omitempty"`
 }
 
-// SatelliteObj is always shipped with a Sky object
-type SatelliteObj struct {
+// Satellite is always shipped with a Sky object
+type Satellite struct {
 	Prn    float64 `json:"PRN"`
 	Az     float64 `json:"az,omitempty"`
 	El     float64 `json:"el,omitempty"`
@@ -105,8 +91,8 @@ type SatelliteObj struct {
 	Health float64 `json:"health,omitempty"`
 }
 
-// GstObj is a pseudorange noise report
-type GstObj struct {
+// Gst is a pseudorange noise report
+type Gst struct {
 	Class  string  `json:"class"`
 	Device string  `json:"device,omitempty"`
 	Time   string  `json:"time,omitempty"`
@@ -119,8 +105,8 @@ type GstObj struct {
 	Alt    float64 `json:"alt,omitempty"`
 }
 
-// AttObj is a vehicle-attitude report
-type AttObj struct {
+// Att is a vehicle-attitude report
+type Att struct {
 	Class   string  `json:"class"`
 	Device  string  `json:"device,omitempty"`
 	Time    string  `json:"time,omitempty"`
@@ -147,8 +133,8 @@ type AttObj struct {
 	Temp    float64 `json:"temp,omitempty"`
 }
 
-// ToffObj reports the GPS time as derived from the GPS serial data stream
-type ToffObj struct {
+// Toff reports the GPS time as derived from the GPS serial data stream
+type Toff struct {
 	Class     string  `json:"class"`
 	Device    string  `json:"device"`
 	RealSec   float64 `json:"real_sec"`
@@ -157,8 +143,8 @@ type ToffObj struct {
 	ClockNsec float64 `json:"clock_nsec"`
 }
 
-// PpsObj reports the GPS time as derived from the GPS PPS pulse
-type PpsObj struct {
+// Pps reports the GPS time as derived from the GPS PPS pulse
+type Pps struct {
 	Class     string  `json:"class"`
 	Device    string  `json:"device"`
 	RealSec   float64 `json:"real_sec"`
@@ -169,8 +155,8 @@ type PpsObj struct {
 	Qerr      float64 `json:"qErr,omitempty"`
 }
 
-// OscObj reports the status of a GPS-disciplined oscillator
-type OscObj struct {
+// Osc reports the status of a GPS-disciplined oscillator
+type Osc struct {
 	Class       string  `json:"class"`
 	Device      string  `json:"device"`
 	Running     bool    `json:"running"`
@@ -179,8 +165,8 @@ type OscObj struct {
 	Delta       float64 `json:"delta"`
 }
 
-// VersionObj reports protocol specific versioning information
-type VersionObj struct {
+// Version reports protocol specific versioning information
+type Version struct {
 	Class      string  `json:"class"`
 	Release    string  `json:"release"`
 	Rev        string  `json:"rev"`
@@ -189,15 +175,15 @@ type VersionObj struct {
 	Remote     string  `json:"remote"`
 }
 
-// DevicesObj contains a list of devices
-type DevicesObj struct {
-	Class   string      `json:"class"`
-	Devices []DeviceObj `json:"devices"`
-	Remote  string      `json:"remote,omitempty"`
+// Devices contains a list of devices
+type Devices struct {
+	Class   string   `json:"class"`
+	Devices []Device `json:"devices"`
+	Remote  string   `json:"remote,omitempty"`
 }
 
-// DeviceObj contains device specific information
-type DeviceObj struct {
+// Device contains device specific information
+type Device struct {
 	Class     string `json:"class"`
 	Path      string `json:"path,omitempty"`
 	Activated string `json:"activated,omitempty"`
@@ -213,8 +199,8 @@ type DeviceObj struct {
 	Mincycle  int    `json:"mincycle,omitempty"`
 }
 
-// WatchObj sets the watcher mode
-type WatchObj struct {
+// Watch sets the watcher mode
+type Watch struct {
 	Class   string `json:"class,omitempty"`
 	Enable  bool   `json:"enable,omitempty"`
 	JSON    bool   `json:"json,omitempty"`
@@ -227,8 +213,8 @@ type WatchObj struct {
 	Remote  string `json:"remote,omitempty"`
 }
 
-// ErrorObj contains error messages coming from gpsd daemon
-type ErrorObj struct {
+// Error contains error messages coming from gpsd daemon
+type Error struct {
 	Class   string `json:"class"`
 	Message string `json:"message"`
 }
