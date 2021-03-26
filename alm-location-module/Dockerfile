@@ -8,6 +8,6 @@ ARG VERSION=dev
 WORKDIR /go/src/alm-location-module
 RUN VERSION=${VERSION} BIN_DIR=/install make
 
-FROM scratch
+FROM alpine:3.12
 COPY --from=build /install/alm-location-module /alm-location-module
 ENTRYPOINT ["/alm-location-module"]

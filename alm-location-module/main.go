@@ -36,12 +36,15 @@ const (
 
 var (
 	// GpsdHost is defined by running this container with `--add-host=host.docker.internal:host-gateway`
-	gpsdHost = "host.docker.internal:2947"
+	gpsdHost    = "host.docker.internal:2947"
+	invalidSent = false
+	noFixSent   = false
 )
 
 type position struct {
 	lat       float64
 	lon       float64
+	mode      int32
 	timestamp time.Time
 }
 
@@ -121,11 +124,23 @@ func main() {
 	msg := make(map[string]interface{})
 
 	newPositionChan := make(chan position)
-	gpsClient, err := gpsd.NewClient(gpsdHost)
-	if err != nil {
-		log.Fatal(err)
-	}
 
+	gpsChan := make(chan *gpsd.Connection)
+	go func() {
+		for i := 0; i < connectTimeoutSeconds; i++ {
+			if gpsdClient, err := gpsd.NewClient(gpsdHost); err != nil {
+				log.Printf("Connect failed: %s\n", err)
+				log.Printf("Reconnecting to '%s'\n", gpsdHost)
+			} else {
+				log.Printf("Connected to '%s'\n", gpsdHost)
+				gpsChan <- gpsdClient
+				return
+			}
+			time.Sleep(time.Second)
+		}
+	}()
+
+	gpsClient := <-gpsChan
 	gpsClient.RegisterTpv(func(r interface{}) {
 		tpv := r.(*gpsd.Tpv)
 		t, err := iso8601.Parse([]byte(tpv.Time))
@@ -135,14 +150,55 @@ func main() {
 		pos := position{
 			lat:       tpv.Lat,
 			lon:       tpv.Lon,
+			mode:      int32(tpv.Mode),
 			timestamp: t,
 		}
-		newPositionChan <- pos
+
+		fmt.Printf("Received value: %f,%f,%d,%d\n", pos.lat, pos.lon, pos.mode, pos.timestamp.Unix())
+		if pos.mode >= 2 {
+			invalidSent = false
+			noFixSent = false
+			newPositionChan <- pos
+			return
+		}
+
+		// This state means: the gps modem did not have any fix at all. Therefore
+		// a single notifaction is sent with the system timestamp.
+		if pos.lat == 0.0 && pos.lon == 0.0 && pos.mode == 0 {
+			if !invalidSent {
+				invalidSent = true
+				noFixSent = false
+				pos.timestamp = time.Now()
+				fmt.Printf("Invalid data. Informing only once with system timestamp: %d", pos.timestamp.Unix())
+				newPositionChan <- pos
+			}
+			return
+		}
+
+		if pos.mode == 1 {
+			if !noFixSent {
+				if pos.lat == 0.0 && pos.lon == 0.0 {
+					pos.timestamp = time.Now()
+					fmt.Printf("Invalid data. Informing only once with system timestamp: %d", pos.timestamp.Unix())
+				} else {
+					fmt.Printf("Lost GPS Fix. Informing only once with data timestamp: %d", pos.timestamp.Unix())
+				}
+				noFixSent = true
+				invalidSent = false
+				newPositionChan <- pos
+			}
+			return
+		}
 	})
+
+	_, err = gpsClient.Watch()
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	for {
 		newPos := <-newPositionChan
-
+		fmt.Println(newPos)
 		// Define avro message content
 		msg["device"] = deviceID
 		msg["acqTime"] = newPos.timestamp.Unix()
@@ -171,7 +227,7 @@ func main() {
 		if err != nil {
 			log.Fatalln(err)
 		}
-		fmt.Printf("Sending value: %f,%f\n", newPos.lat, newPos.lon)
+		fmt.Printf("Sending value: %f,%f,%d,%d\n", newPos.lat, newPos.lon, newPos.mode, newPos.timestamp.Unix())
 	}
 }
 
