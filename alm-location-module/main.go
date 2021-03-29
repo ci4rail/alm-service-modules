@@ -35,7 +35,7 @@ const (
 )
 
 var (
-	// GpsdHost is defined by running this container with `--add-host=host.docker.internal:host-gateway`
+	// GpsdHost is defined by running this container with `--add-host=host.docker.internal:172.17.0.1`
 	gpsdHost    = "host.docker.internal:2947"
 	invalidSent = false
 	noFixSent   = false
@@ -44,7 +44,7 @@ var (
 type position struct {
 	lat       float64
 	lon       float64
-	mode      int32
+	mode      int
 	timestamp time.Time
 }
 
@@ -150,7 +150,7 @@ func main() {
 		pos := position{
 			lat:       tpv.Lat,
 			lon:       tpv.Lon,
-			mode:      int32(tpv.Mode),
+			mode:      tpv.Mode,
 			timestamp: t,
 		}
 
