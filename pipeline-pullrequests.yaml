@@ -69,7 +69,7 @@ jobs:
             run:
               path: build
             params:
-              CONTEXT: pull-request/
+              CONTEXT: pull-request/alm-location-module
               DOCKERFILE: pull-request/alm-location-module/Dockerfile
           on_failure:
             put: pull-request
