@@ -11,8 +11,8 @@ type GenericClass struct {
 type Tpv struct {
 	Class       string  `json:"class"`
 	Device      string  `json:"device,omitempty"`
-	Mode        float64 `json:"mode"`
-	Status      float64 `json:"status,omitempty"`
+	Mode        int     `json:"mode"`
+	Status      int     `json:"status,omitempty"`
 	Time        string  `json:"time,omitempty"`
 	Althae      float64 `json:"altHAE,omitempty"`
 	Altmsl      float64 `json:"altMSL,omitempty"`
@@ -21,7 +21,7 @@ type Tpv struct {
 	Datum       string  `json:"datum,omitempty"`
 	Depth       float64 `json:"depth,omitempty"`
 	Dgpsage     float64 `json:"dgpsAge,omitempty"`
-	Dgpssta     float64 `json:"dgpsSta,omitempty"`
+	Dgpssta     int     `json:"dgpsSta,omitempty"`
 	Epc         float64 `json:"epc,omitempty"`
 	Epd         float64 `json:"epd,omitempty"`
 	Eph         float64 `json:"eph,omitempty"`
@@ -72,8 +72,8 @@ type Sky struct {
 	Vdop       float64     `json:"vdop,omitempty"`
 	Xdop       float64     `json:"xdop,omitempty"`
 	Ydop       float64     `json:"ydop,omitempty"`
-	Nsat       float64     `json:"nSat,omitempty"`
-	Usat       float64     `json:"uSat,omitempty"`
+	Nsat       int         `json:"nSat,omitempty"`
+	Usat       int         `json:"uSat,omitempty"`
 	Satellites []Satellite `json:"satellites,omitempty"`
 }
 
@@ -84,11 +84,11 @@ type Satellite struct {
 	El     float64 `json:"el,omitempty"`
 	Ss     float64 `json:"ss,omitempty"`
 	Used   bool    `json:"used"`
-	Gnssid float64 `json:"gnssid,omitempty"`
-	Svid   float64 `json:"svid,omitempty"`
-	Sigid  float64 `json:"sigid,omitempty"`
-	Freqid float64 `json:"freqid,omitempty"`
-	Health float64 `json:"health,omitempty"`
+	Gnssid int     `json:"gnssid,omitempty"`
+	Svid   int     `json:"svid,omitempty"`
+	Sigid  int     `json:"sigid,omitempty"`
+	Freqid int     `json:"freqid,omitempty"`
+	Health int     `json:"health,omitempty"`
 }
 
 // Gst is a pseudorange noise report
@@ -157,22 +157,22 @@ type Pps struct {
 
 // Osc reports the status of a GPS-disciplined oscillator
 type Osc struct {
-	Class       string  `json:"class"`
-	Device      string  `json:"device"`
-	Running     bool    `json:"running"`
-	Reference   bool    `json:"reference"`
-	Disciplined bool    `json:"disciplined"`
-	Delta       float64 `json:"delta"`
+	Class       string `json:"class"`
+	Device      string `json:"device"`
+	Running     bool   `json:"running"`
+	Reference   bool   `json:"reference"`
+	Disciplined bool   `json:"disciplined"`
+	Delta       int    `json:"delta"`
 }
 
 // Version reports protocol specific versioning information
 type Version struct {
-	Class      string  `json:"class"`
-	Release    string  `json:"release"`
-	Rev        string  `json:"rev"`
-	ProtoMajor float64 `json:"proto_major"`
-	ProtoMinor float64 `json:"proto_minor"`
-	Remote     string  `json:"remote"`
+	Class      string `json:"class"`
+	Release    string `json:"release"`
+	Rev        string `json:"rev"`
+	ProtoMajor int    `json:"proto_major"`
+	ProtoMinor int    `json:"proto_minor"`
+	Remote     string `json:"remote"`
 }
 
 // Devices contains a list of devices

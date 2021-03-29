@@ -1,7 +1,7 @@
 application: alm-location-module
 modules:
   - name: alm-location-module
-    image: ci4rail/alm-location-module:latest
+    image: ci4rail/alm-location-module:<TAG>
     createOptions: '{}'
     imagePullPolicy: on-create
     restartPolicy: always

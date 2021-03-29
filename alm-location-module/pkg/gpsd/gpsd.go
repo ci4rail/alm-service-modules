@@ -101,10 +101,6 @@ func (c *Connection) RegisterError(h FilterHandler) {
 	c.filters["ERROR"] = h
 }
 
-// func (c *Connection) Register(class Class, h FilterHandler) {
-// 	c.filters[class.String()] = h
-// }
-
 // Watch enables watching to gpsd server
 func (c *Connection) Watch() (chan bool, error) {
 	// Send the WATCH command to gpsd
