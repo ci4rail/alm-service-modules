@@ -29,12 +29,20 @@ resources:
       skip_ssl_verification: ((git_skip_ssl_verification))
 
   # Own docker images
-  - name: image-alm-location-module
+  - name: image-alm-location-module-harbor
+    type: docker-buildx
+    source:
+      repository: harbor.ci4rail.com/ci4rail/alm-location-module
+      username: ((harbor_registry_user))
+      password: ((harbor_registry_password))
+
+  - name: image-alm-location-module-github
     type: docker-buildx
     source:
       repository: ci4rail/alm-location-module
-      username: ((registry_user))
-      password: ((registry_password))
+      username: ((github_registry_user))
+      password: ((github_registry_password))
+
 
 jobs:
   - name: build-((name))
@@ -81,11 +89,19 @@ jobs:
                 ROOT=$(pwd)
                 echo {\"VERSION\":\"$(cat gitversion/plain/Sha)\"} > build-args/build-args
 
+      - in_parallel:
+        - put: image-alm-location-module-harbor
+          params:
+            build: source/alm-location-module/
+            buildx_platforms: "linux/amd64,linux/arm64"
+            build_args_file: build-args/build-args
+            latest: false
+            tag_file: gitversion/plain/InformationalVersion
 
-      - put: image-alm-location-module
-        params:
-          build: source/alm-location-module/
-          buildx_platforms: "linux/amd64,linux/arm64"
-          build_args_file: build-args/build-args
-          latest: false
-          tag_file: gitversion/plain/InformationalVersion
+        - put: image-alm-location-module-github
+          params:
+            build: source/alm-location-module/
+            buildx_platforms: "linux/amd64,linux/arm64"
+            build_args_file: build-args/build-args
+            latest: false
+            tag_file: gitversion/plain/InformationalVersion
