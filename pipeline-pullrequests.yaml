@@ -77,6 +77,29 @@ jobs:
               path: pull-request
               status: failure
 
+        - task: build-gpsfake-module-docker-image
+          privileged: true
+          config:
+            platform: linux
+            image_resource:
+              type: registry-image
+              source:
+                repository: vito/oci-build-task
+            inputs:
+              - name: pull-request
+            outputs:
+              - name: image
+            run:
+              path: build
+            params:
+              CONTEXT: pull-request/gpsfake-module
+              DOCKERFILE: pull-request/gpsfake-module/Dockerfile
+          on_failure:
+            put: pull-request
+            params:
+              path: pull-request
+              status: failure
+
       - put: pull-request
         params:
           path: pull-request

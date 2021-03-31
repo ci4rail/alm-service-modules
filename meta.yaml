@@ -7,6 +7,7 @@ meta:
     - dobi.yaml
     - version.yaml
     - alm-location-module/dobi.yaml
+    - gpsfake-module/dobi.yaml
 
 # ===================================================
 # alias
@@ -16,6 +17,7 @@ alias=build:
   tasks:
     - build-alm-location-module
     - build-and-push-image-alm-location-module
+    - build-and-push-image-gpsfake-module
   annotations:
     description: "[alias] build (and push) all"
     tags:
