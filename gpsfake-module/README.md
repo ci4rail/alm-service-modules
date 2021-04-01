@@ -1,7 +1,7 @@
 # gpsfake-module
 
-`gpsfake-module` is a module provides simulated location data provided by a `gpsd` server.
-The `gpsfake-module` behaves like gpsd server using a real gps modem. Use the `gpsfake-module` with `alm-location-module`.
+`gpsfake-module` is a module that provides simulated location data provided by a `gpsd` server.
+The `gpsfake-module` behaves like gpsd server simulating a gps modem. Use the `gpsfake-module` with `alm-location-module`.
 
 *Note: This is based on https://github.com/knowhowlab/gpsd-nmea-simulator*
 
