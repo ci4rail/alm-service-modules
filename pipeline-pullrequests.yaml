@@ -138,7 +138,7 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/ShortSha
           on_failure:
             put: pull-request
             params:
@@ -151,7 +151,7 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/ShortSha
           on_failure:
             put: pull-request
             params:
