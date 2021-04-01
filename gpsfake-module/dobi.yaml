@@ -1,0 +1,36 @@
+# ===================================================
+# mounts
+# ===================================================
+mount=mount-gpsfake-module-src:
+  bind: "gpsfake-module"
+  path: "/src"
+  read-only: false
+
+mount=mount-gpsfake-module-bin:
+  bind: "bin/"
+  path: "/install"
+  read-only: false
+
+# ===================================================
+# jobs
+# ===================================================
+
+job=build-and-push-image-gpsfake-module:
+  use: dind-buildx
+  mounts:
+    - mount-gpsfake-module-src
+    - mount-docker-socket
+    - mount-docker-config
+  interactive: true
+  command: sh -c "cd /src;
+           name=$(docker buildx create --use);
+           docker buildx build --push --platform linux/arm64,linux/amd64 --tag harbor.ci4rail.com/ci4rail/gpsfake-module:${VERSION} --tag ci4rail/gpsfake-module:${VERSION} .;
+           docker kill buildx_buildkit_${name}0;
+           docker rm buildx_buildkit_${name}0"
+  env:
+   - DOCKER_DRIVER=overlay2
+   - VERSION={env.GitVersion_BranchVersion}
+  annotations:
+    description: "-> builds and pushes gpsfake-module multiarch docker images"
+    tags:
+      - build

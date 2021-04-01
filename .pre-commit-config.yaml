@@ -11,6 +11,7 @@ repos:
     hooks:
       - id: flake8
         args: [--max-line-length=130]
+        exclude: ^gpsfake-module/simulator/
   - repo: git://github.com/dnephin/pre-commit-golang
     rev: master
     hooks:
