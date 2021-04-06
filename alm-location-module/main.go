@@ -113,6 +113,10 @@ func main() {
 		{
 			"name": "lon",
 			"type": "double"
+		},
+		{
+			"name": "mode",
+			"type": "int"
 		}
 		]
 	}`)
@@ -204,6 +208,7 @@ func main() {
 		msg["acqTime"] = newPos.timestamp.Unix()
 		msg["lat"] = newPos.lat
 		msg["lon"] = newPos.lon
+		msg["mode"] = newPos.mode
 
 		bin := new(bytes.Buffer)
 		if err != nil {
