@@ -14,8 +14,7 @@ The `pipeline.yaml` is the CI/CD pipeline that builds all the alm service module
 
 ### Usage
 
-Copy `ci/credentials.template.yaml` to `ci/credentials.yaml` and enter the credentials needed.
-For docker registry credentials see `yoda harbor robot user (ci4rail)` in bitwarden.
+Copy `ci/credentials.template.yaml` to `ci/credentials.yaml` and copy the content from `alm-service-modules credentials.yaml` found in bitwarden.
 For `github_access_token` see `yoda-ci4rail github token` from bitwarden.
 Apply the CI/CD pipeline to Concourse CI using
 ```bash
@@ -28,9 +27,7 @@ The `pipeline-pullrequests.yaml` defines a pipeline that runs basic quality chec
 
 ### Usage
 
-Copy `ci/credentials-pullrequests.template.yaml` to `ci/credentials-pullrequests.yaml`.
-Copy content of specific yaml file for this pipeline from `yoda-ci4rail github token` in bitwarden to `ci/credentials-pullrequests.yaml`.
-For docker registry credentials see `yoda harbor robot user (ci4rail-dev)` in bitwarden.
+Copy `ci/credentials-pullrequests.template.yaml` to `ci/credentials-pullrequests.yaml` and copy  the content from `alm-service-modules credentials-pullrequests.yaml` found in bitwarden.
 Configure a Webhook on github using this URL and the same webhook_token:
 `https://concourse.ci4rail.com/api/v1/teams/main/pipelines/alm-service-modules-pull-requests/resources/pull-request/check/webhook?webhook_token=<webhook_token>`
 
