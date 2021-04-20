@@ -12,7 +12,7 @@ resources:
     type: docker-image
     source:
       repository: elbb/bb-gitversion
-      tag: 0.7.0
+      tag: 0.8.3
 
   - name: image-busybox
     type: docker-image
@@ -32,7 +32,7 @@ resources:
   - name: image-alm-location-module-harbor
     type: docker-buildx
     source:
-      repository: harbor.ci4rail.com/ci4rail/alm-location-module
+      repository: harbor.ci4rail.com/edgefarm/alm-location-module
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
@@ -40,13 +40,13 @@ resources:
     type: docker-buildx
     source:
       repository: ci4rail/alm-location-module
-      username: ((github_registry_user))
-      password: ((github_registry_password))
+      username: ((dockerhub_registry_user))
+      password: ((dockerhub_registry_password))
 
   - name: image-gpsfake-module-harbor
     type: docker-buildx
     source:
-      repository: harbor.ci4rail.com/ci4rail/gpsfake-module
+      repository: harbor.ci4rail.com/edgefarm/gpsfake-module
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
@@ -54,8 +54,8 @@ resources:
     type: docker-buildx
     source:
       repository: ci4rail/gpsfake-module
-      username: ((github_registry_user))
-      password: ((github_registry_password))
+      username: ((dockerhub_registry_user))
+      password: ((dockerhub_registry_password))
 
 jobs:
   - name: build-((name))
@@ -85,6 +85,8 @@ jobs:
           params:
             GIT_PATH: source
             GEN_PATH: gitversion
+            DEFAULT_BRANCH: ((git_default_branch))
+            GIT_BRANCH: ((git_branch))
 
       - task: generate-build-args-for-images
         image: image-busybox
@@ -109,7 +111,7 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
 
         - put: image-alm-location-module-github
           params:
@@ -117,7 +119,7 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
 
         - put: image-gpsfake-module-harbor
           params:
@@ -125,7 +127,7 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
 
         - put: image-gpsfake-module-github
           params:
@@ -133,4 +135,4 @@ jobs:
             buildx_platforms: "linux/amd64,linux/arm64"
             build_args_file: build-args/build-args
             latest: false
-            tag_file: gitversion/plain/InformationalVersion
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
