@@ -8,6 +8,11 @@ Make sure that you manually run `docker login` for user `ci4rail` on your host s
 
 # Build pipeline
 
+Make sure that you are logged in to team `edgefarm` in Concourse.
+```bash
+$ fly -t prod login -n edgefarm
+```
+
 ## pipeline.yaml
 
 The `pipeline.yaml` is the CI/CD pipeline that builds all the alm service module docker images for different architectures. The images are published on [docker hub](https://hub.docker.com/u/ci4rail) and [Ci4Rail harbor](https://harbor.ci4rail.com/harbor/projects/7/repositories).
@@ -29,7 +34,7 @@ The `pipeline-pullrequests.yaml` defines a pipeline that runs basic quality chec
 
 Copy `ci/credentials-pullrequests.template.yaml` to `ci/credentials-pullrequests.yaml` and copy  the content from `alm-service-modules credentials-pullrequests.yaml` found in bitwarden.
 Configure a Webhook on github using this URL and the same webhook_token:
-`https://concourse.ci4rail.com/api/v1/teams/main/pipelines/alm-service-modules-pull-requests/resources/pull-request/check/webhook?webhook_token=<webhook_token>`
+`https://concourse.ci4rail.com/api/v1/teams/edgefarm/pipelines/alm-service-modules-pull-requests/resources/pull-request/check/webhook?webhook_token=<webhook_token>`
 
 Apply the pipeline with the name `alm-service-modules-pull-requests`
 ```bash
