@@ -1,6 +1,6 @@
 # alm-service-modules
 
-[![CI](https://concourse.ci4rail.com/api/v1/teams/main/pipelines/alm-service-modules/jobs/build-alm-service-modules/badge)](https://concourse.ci4rail.com/teams/main/pipelines/alm-service-modules) [![Go Report Card](https://goreportcard.com/badge/github.com/ci4rail/alm-service-modules)](https://goreportcard.com/badge/github.com/ci4rail/alm-service-modules)
+[![CI](https://concourse.ci4rail.com/api/v1/teams/edgefarm/pipelines/alm-service-modules/jobs/build-alm-service-modules/badge)](https://concourse.ci4rail.com/teams/edgefarm/pipelines/alm-service-modules) [![Go Report Card](https://goreportcard.com/badge/github.com/ci4rail/alm-service-modules)](https://goreportcard.com/badge/github.com/ci4rail/alm-service-modules)
 
 # Local build with dobi
 
