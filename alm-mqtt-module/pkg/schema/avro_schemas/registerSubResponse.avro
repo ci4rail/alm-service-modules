@@ -1,0 +1,15 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.registerSub.response",
+	"doc": "register sub message response",
+	"fields" : [
+	{
+		"name": "subject",
+		"type": "string"
+	},
+	{
+		"name": "error",
+		"type": "string"
+	}
+	]
+}

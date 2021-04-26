@@ -1,0 +1,11 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.registerSub.request",
+	"doc": "register sub message request",
+	"fields" : [
+	{
+		"name": "topic",
+		"type": "string"
+	}
+	]
+}

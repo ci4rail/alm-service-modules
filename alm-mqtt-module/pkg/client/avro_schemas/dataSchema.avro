@@ -1,0 +1,23 @@
+{
+	"type": "record",
+	"name": "service.mqtt",
+	"doc": "generic message from MQTT",
+	"fields" : [
+	{
+		"name": "device",
+		"type": "string"
+	},
+	{
+		"name": "acqTime",
+		"type": {
+			"type": "int",
+			"doc": "unix timestamp",
+			"logicalType": "timestamp"
+		}
+	},
+	{
+		"name": "payload",
+		"type": "bytes"
+	}
+	]
+}

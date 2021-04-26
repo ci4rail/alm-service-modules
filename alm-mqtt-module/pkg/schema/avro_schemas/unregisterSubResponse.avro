@@ -1,0 +1,11 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.unregisterSub.response",
+	"doc": "unregister sub message response",
+	"fields" : [
+	{
+		"name": "error",
+		"type": "string"
+	}
+	]
+}

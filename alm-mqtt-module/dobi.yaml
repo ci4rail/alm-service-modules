@@ -1,0 +1,57 @@
+# ===================================================
+# mounts
+# ===================================================
+mount=mount-alm-mqtt-module-src:
+  bind: "alm-mqtt-module"
+  path: "/src"
+  read-only: false
+
+mount=mount-alm-mqtt-module-bin:
+  bind: "bin/"
+  path: "/install"
+  read-only: false
+
+# ===================================================
+# jobs
+# ===================================================
+
+job=build-alm-mqtt-module:
+  use: image-go-builder
+  command: bash -c 'cd /src && make -j${nproc}'
+  mounts:
+    - mount-alm-mqtt-module-src
+    - mount-alm-mqtt-module-bin
+    - mount-go-pkg
+  sources:
+    - alm-mqtt-module
+  artifact:
+    - bin/alm-mqtt-module
+  user: "{user.uid}:{user.gid}"
+  env:
+    - VERSION={env.GitVersion_Sha}
+    - BIN_DIR=/install
+    - GOCACHE=/tmp/cache
+  annotations:
+    description: "-> build alm-mqtt-module"
+    tags:
+      - build
+
+job=build-and-push-image-alm-mqtt-module:
+  use: dind-buildx
+  mounts:
+    - mount-alm-mqtt-module-src
+    - mount-docker-socket
+    - mount-docker-config
+  interactive: true
+  command: sh -c "cd /src;
+           name=$(docker buildx create --use);
+           docker buildx build --push --platform linux/arm64,linux/amd64 --tag harbor.ci4rail.com/ci4rail/alm-mqtt-module:${VERSION} --tag ci4rail/alm-mqtt-module:${VERSION} .;
+           docker kill buildx_buildkit_${name}0;
+           docker rm buildx_buildkit_${name}0"
+  env:
+   - DOCKER_DRIVER=overlay2
+   - VERSION={env.GitVersion_BranchVersion}
+  annotations:
+    description: "-> builds and pushes alm-mqtt-module multiarch docker images"
+    tags:
+      - build
