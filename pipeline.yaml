@@ -135,6 +135,22 @@ jobs:
             latest: false
             tag_file: gitversion/plain/InformationalVersionDockerLabel
 
+        - put: image-alm-mqtt-module-harbor
+          params:
+            build: source/alm-mqtt-module/
+            buildx_platforms: "linux/amd64,linux/arm64"
+            build_args_file: build-args/build-args
+            latest: false
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
+
+        - put: image-alm-mqtt-module-github
+          params:
+            build: source/alm-mqtt-module/
+            buildx_platforms: "linux/amd64,linux/arm64"
+            build_args_file: build-args/build-args
+            latest: false
+            tag_file: gitversion/plain/InformationalVersionDockerLabel
+
         - put: image-gpsfake-module-harbor
           params:
             build: source/gpsfake-module
