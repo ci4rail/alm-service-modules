@@ -10,7 +10,6 @@ require (
 	github.com/linkedin/goavro v2.1.0+incompatible
 	github.com/nats-io/nats-server/v2 v2.1.9 // indirect
 	github.com/nats-io/nats.go v1.10.0
-	github.com/relvacode/iso8601 v1.1.0
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210423185535-09eb48e85fd7 // indirect
 	gopkg.in/linkedin/goavro.v1 v1.0.5 // indirect

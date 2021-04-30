@@ -45,7 +45,7 @@ job=build-and-push-image-alm-mqtt-module:
   interactive: true
   command: sh -c "cd /src;
            name=$(docker buildx create --use);
-           docker buildx build --push --platform linux/arm64,linux/amd64 --tag harbor.ci4rail.com/ci4rail/alm-mqtt-module:${VERSION} --tag ci4rail/alm-mqtt-module:${VERSION} .;
+           docker buildx build --push --platform linux/arm64,linux/amd64 --tag harbor.ci4rail.com/edgefarm-dev/alm-mqtt-module:${VERSION} .;
            docker kill buildx_buildkit_${name}0;
            docker rm buildx_buildkit_${name}0"
   env:

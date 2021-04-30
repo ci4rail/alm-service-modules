@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 Ci4Rail GmbH
+Copyright © 2021 edgefarm.io
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -36,28 +36,33 @@ const (
 )
 
 var (
-	config     *conf.Config
-	natsClient *nats.Conn
-	deviceID   string
+	config                  *conf.Config
+	natsClient              *nats.Conn
+	deviceID                string
+	newConfigRegisterChan   chan string
+	newConfigUnregisterChan chan string
 )
 
 func mqttHandler(c mqtt.Client, msg mqtt.Message) {
 	fmt.Printf("New MQTT message for '%s'\n", msg.Topic())
-	for _, subject := range config.GetRegistrations(msg.Topic()) {
-		fmt.Printf("\t-> nats '%s'\n", subject)
-		m := make(map[string]interface{})
-		m["payload"] = msg.Payload()
-		m["acqTime"] = time.Now().Unix()
-		m["device"] = deviceID
-		avro, err := avro.NewAvroWriter(m, client.DataCodec)
-		if err != nil {
-			fmt.Println(err)
-		}
-		err = natsClient.Publish(subject, avro)
-		if err != nil {
-			fmt.Println(err)
-		}
+
+	m := make(map[string]interface{})
+	m["payload"] = msg.Payload()
+	m["acqTime"] = time.Now().Unix()
+	m["device"] = deviceID
+	avro, err := avro.Writer(m, client.DataCodec)
+	if err != nil {
+		fmt.Println(err)
 	}
+
+	config.MessageChannelsMutex.Lock()
+	ch := config.GetChannelsForTopic(msg.Topic())
+	for k := range ch {
+		// go func(k string) {
+		ch[k] <- avro
+		// }(k)
+	}
+	config.MessageChannelsMutex.Unlock()
 }
 
 func main() {
@@ -121,13 +126,11 @@ func main() {
 	mqttClient := <-mqttClientChan
 
 	// Channels to register and unregister for 20 simultations requests
-	newConfigRegisterChan := make(chan string, 20)
-	newConfigUnregisterChan := make(chan string, 20)
-	var err error
-	config, err = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan)
-	if err != nil {
-		log.Fatal(err)
-	}
+	newConfigRegisterChan = make(chan string, 100)
+	newConfigUnregisterChan = make(chan string, 100)
+
+	// exitChan := make(chan bool)
+	config = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan)
 
 	go config.HandleConfigRequests()
 

@@ -1,3 +1,19 @@
+/*
+Copyright © 2021 edgefarm.io
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+*/
+
 package client
 
 import (
@@ -17,71 +33,85 @@ import (
 var (
 	//go:embed avro_schemas/dataSchema.avro
 	dataSchema string
-	// DataCodec can be used to decode avro data
-	DataCodec = avro.CreateSchema(dataSchema)
+	// DataCodec is the parsed dataSchema.avro
+	DataCodec *goavro.Codec = avro.CreateSchema(dataSchema)
 )
+
+// Client is a struct containing client relevant data
+type Client struct {
+	nats   *nats.Conn
+	target string
+}
+
+// NewClient creates a new client for talking to `alm-mqtt-module`
+func NewClient(target string, nats *nats.Conn) *Client {
+	return &Client{
+		nats:   nats,
+		target: target,
+	}
+}
 
 // RegisterMqttTopic is used to let a client register to a specific MQTT topic.
 // This functions returns a nats subject the client can subscribe to in order to read the
 // forwarded message.
-func RegisterMqttTopic(target string, topic string, client *nats.Conn) (string, error) {
+func (c *Client) RegisterMqttTopic(topic string) (schema.RegisterSubResponseType, error) {
 	msg := make(map[string]interface{})
 	msg["topic"] = topic
 	registerSubRequestCodec, err := goavro.NewCodec(schema.RegisterSubRequest)
 	if err != nil {
-		return "", err
+		return schema.RegisterSubResponseType{}, err
 	}
-	bytes, err := avro.NewAvroWriter(msg, registerSubRequestCodec)
+	bytes, err := avro.Writer(msg, registerSubRequestCodec)
 	if err != nil {
-		return "", err
+		return schema.RegisterSubResponseType{}, err
 	}
 
-	response, err := client.Request(fmt.Sprintf("%s.config.register", target), bytes, 2*time.Second)
+	response, err := c.nats.Request(fmt.Sprintf("%s.config.register", c.target), bytes, 2*time.Second)
 	if err != nil {
-		if client.LastError() != nil {
-			return "", fmt.Errorf("%v for request", client.LastError())
+		if c.nats.LastError() != nil {
+			return schema.RegisterSubResponseType{}, fmt.Errorf("%v for request", c.nats.LastError())
 		}
-		return "", err
+		return schema.RegisterSubResponseType{}, err
 	}
 
-	avro, _ := avro.NewAvroReader(response.Data)
-	j, _ := avro.AvroToByteString()
+	avro, _ := avro.NewReader(response.Data)
+	j, _ := avro.ByteString()
 
 	res := schema.RegisterSubResponseType{}
 	err = json.Unmarshal(j, &res)
 	if err != nil {
-		return "", err
+		return schema.RegisterSubResponseType{}, err
 	}
-	if res.Error != "" {
-		return "", fmt.Errorf("%s", res.Error)
+	if len(res.Error) > 0 {
+		return schema.RegisterSubResponseType{}, fmt.Errorf("%s", res.Error)
 	}
-	return res.Subject, nil
+	return res, nil
 }
 
 // UnregisterNatsSubject is used to unregister a client from a specific nats subject
 // previously registered using 'RegisterMqttTopic'.
-func UnregisterNatsSubject(target string, subject string, client *nats.Conn) error {
+func (c *Client) UnregisterNatsSubject(subject string) error {
 	msg := make(map[string]interface{})
 	msg["subject"] = subject
 	unregisterSubRequestCodec, err := goavro.NewCodec(schema.UnregisterSubRequest)
 	if err != nil {
 		return err
 	}
-	bytes, err := avro.NewAvroWriter(msg, unregisterSubRequestCodec)
+	bytes, err := avro.Writer(msg, unregisterSubRequestCodec)
 	if err != nil {
 		return err
 	}
 
-	response, err := client.Request(fmt.Sprintf("%s.config.unregister", target), bytes, 2*time.Second)
+	response, err := c.nats.Request(fmt.Sprintf("%s.config.unregister", c.target), bytes, 2*time.Second)
 	if err != nil {
-		if client.LastError() != nil {
-			return fmt.Errorf("%v for request", client.LastError())
+		if c.nats.LastError() != nil {
+			return fmt.Errorf("%v for request", c.nats.LastError())
 		}
 		return err
 	}
 
-	avro, _ := avro.NewAvroReader(response.Data)
-	j, _ := avro.AvroToByteString()
+	avro, _ := avro.NewReader(response.Data)
+	j, _ := avro.ByteString()
 
 	res := schema.UnregisterSubResponseType{}
 	err = json.Unmarshal(j, &res)

@@ -1,8 +1,8 @@
 NAME = alm-mqtt-module-example
-BIN_DIR ?= ../../bin
+BIN_DIR ?= ../../../bin
 GO_LDFLAGS = -tags 'netgo osusergo static_build'
 
-all: build
+all: test build
 
 build:
 	GOOS=linux go build $(GO_LDFLAGS) -o ${BIN_DIR}/${NAME} example.go
