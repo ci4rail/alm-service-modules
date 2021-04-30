@@ -13,6 +13,7 @@ docker run -p 4222:4222 -p 6222:6222 -p 8222:8222 --rm -d --name nats --network 
 
 Build example and alm-mqtt-module & Start alm-mqtt-module:
 ```
+cd alm-service-modules/alm-mqtt-module
 make
 make example
 ../bin/alm-mqtt-module
@@ -20,7 +21,7 @@ make example
 
 Start test:
 ```
-cd test
+cd alm-service-modules/alm-mqtt-module/test
 ./test.sh
 ```
 
