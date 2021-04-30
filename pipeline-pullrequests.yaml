@@ -33,6 +33,13 @@ resources:
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
+  - name: image-alm-mqtt-module-harbor-dev
+    type: docker-buildx
+    source:
+      repository: harbor.ci4rail.com/edgefarm-dev/alm-mqtt-module
+      username: ((harbor_registry_user))
+      password: ((harbor_registry_password))
+
   - name: image-gpsfake-module-harbor-dev
     type: docker-buildx
     source:
@@ -148,6 +155,40 @@ jobs:
               path: pull-request
               status: failure
 
+        - task: build-alm-mqtt-module
+          image: image-golang
+          config:
+            platform: linux
+            inputs:
+              - name: pull-request
+            run:
+              path: /bin/bash
+              args:
+                - -ec
+                - |
+                  ROOT=$(pwd)
+                  cd ${ROOT}/pull-request/alm-mqtt-module
+                  make test
+                  make
+          on_failure:
+            put: pull-request
+            params:
+              path: pull-request
+              status: failure
+
+        - put: image-alm-mqtt-module-harbor-dev
+          params:
+            build: pull-request/alm-mqtt-module/
+            buildx_platforms: "linux/amd64,linux/arm64"
+            build_args_file: build-args/build-args
+            latest: false
+            tag_file: gitversion/plain/ShortSha
+          on_failure:
+            put: pull-request
+            params:
+              path: pull-request
+              status: failure
+
         - put: image-gpsfake-module-harbor-dev
           params:
             build: pull-request/gpsfake-module/
@@ -160,6 +201,8 @@ jobs:
             params:
               path: pull-request
               status: failure
+
+
 
       - put: pull-request
         params:

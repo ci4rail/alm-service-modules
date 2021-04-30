@@ -43,6 +43,20 @@ resources:
       username: ((dockerhub_registry_user))
       password: ((dockerhub_registry_password))
 
+  - name: image-alm-mqtt-module-harbor
+    type: docker-buildx
+    source:
+      repository: harbor.ci4rail.com/edgefarm/alm-mqtt-module
+      username: ((harbor_registry_user))
+      password: ((harbor_registry_password))
+
+  - name: image-alm-mqtt-module-github
+    type: docker-buildx
+    source:
+      repository: ci4rail/alm-mqtt-module
+      username: ((dockerhub_registry_user))
+      password: ((dockerhub_registry_password))
+
   - name: image-gpsfake-module-harbor
     type: docker-buildx
     source:
