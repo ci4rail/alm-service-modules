@@ -36,7 +36,7 @@ resources:
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
-  - name: image-alm-location-module-github
+  - name: image-alm-location-module-dockerhub
     type: docker-buildx
     source:
       repository: ci4rail/alm-location-module
@@ -50,7 +50,7 @@ resources:
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
-  - name: image-alm-mqtt-module-github
+  - name: image-alm-mqtt-module-dockerhub
     type: docker-buildx
     source:
       repository: ci4rail/alm-mqtt-module
@@ -64,7 +64,7 @@ resources:
       username: ((harbor_registry_user))
       password: ((harbor_registry_password))
 
-  - name: image-gpsfake-module-github
+  - name: image-gpsfake-module-dockerhub
     type: docker-buildx
     source:
       repository: ci4rail/gpsfake-module
@@ -127,7 +127,7 @@ jobs:
             latest: false
             tag_file: gitversion/plain/InformationalVersionDockerLabel
 
-        - put: image-alm-location-module-github
+        - put: image-alm-location-module-dockerhub
           params:
             build: source/alm-location-module/
             buildx_platforms: "linux/amd64,linux/arm64"
@@ -143,7 +143,7 @@ jobs:
             latest: false
             tag_file: gitversion/plain/InformationalVersionDockerLabel
 
-        - put: image-alm-mqtt-module-github
+        - put: image-alm-mqtt-module-dockerhub
           params:
             build: source/alm-mqtt-module/
             buildx_platforms: "linux/amd64,linux/arm64"
@@ -159,7 +159,7 @@ jobs:
             latest: false
             tag_file: gitversion/plain/InformationalVersionDockerLabel
 
-        - put: image-gpsfake-module-github
+        - put: image-gpsfake-module-dockerhub
           params:
             build: source/gpsfake-module
             buildx_platforms: "linux/amd64,linux/arm64"
