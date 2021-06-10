@@ -1,0 +1,11 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.sendMQTT.response",
+	"doc": "send MQTT message response",
+	"fields" : [
+	{
+		"name": "error",
+		"type": "string"
+	}
+	]
+}

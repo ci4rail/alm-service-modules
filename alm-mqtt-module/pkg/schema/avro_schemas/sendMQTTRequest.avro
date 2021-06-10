@@ -1,0 +1,15 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.sendMQTT.request",
+	"doc": "send MQTT message request",
+	"fields" : [
+	{
+		"name": "topic",
+		"type": "string"
+	},
+	{
+		"name": "payload",
+		"type": "bytes"
+	}
+	]
+}

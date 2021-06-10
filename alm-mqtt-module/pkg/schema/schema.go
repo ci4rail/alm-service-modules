@@ -43,6 +43,17 @@ type UnregisterSubResponseType struct {
 	Error string `json:"error"`
 }
 
+// SendMQTTRequestType is the struct for an Unregister Subscription request
+type SendMQTTRequestType struct {
+	Topic   string `json:"topic"`
+	Payload byte   `json:"payload"`
+}
+
+// SendMQTTResponseType is the struct for an Unregister Subscription response
+type SendMQTTResponseType struct {
+	Error string `json:"error"`
+}
+
 // RegisterSubRequest is the text file loaded schema for RegisterSubRequests
 //go:embed avro_schemas/registerSubRequest.avro
 var RegisterSubRequest string
@@ -70,3 +81,17 @@ var UnregisterSubResponse string
 
 // UnregisterSubResponseCodec is the prepared avro codec for UnregisterSubResponses
 var UnregisterSubResponseCodec = avro.CreateSchema(UnregisterSubResponse)
+
+// SendMQTTRequest is the text file loaded schema for SendMQTTRequests
+//go:embed avro_schemas/sendMQTTRequest.avro
+var SendMQTTRequest string
+
+// SendMQTTRequestCodec is the prepared avro codec for SendMQTTRequests
+var SendMQTTRequestCodec = avro.CreateSchema(SendMQTTRequest)
+
+// SendMQTTResponse is the text file loaded schema for SendMQTTResponses
+//go:embed avro_schemas/sendMQTTResponse.avro
+var SendMQTTResponse string
+
+// SendMQTTResponseCodec is the prepared avro codec for SendMQTTResponses
+var SendMQTTResponseCodec = avro.CreateSchema(SendMQTTResponse)
