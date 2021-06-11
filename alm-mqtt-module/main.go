@@ -134,7 +134,6 @@ func main() {
 	config = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan, pubChan)
 
 	go config.HandleConfigRequests()
-
 	go config.HandlePublishRequests()
 
 	for {
