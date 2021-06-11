@@ -123,3 +123,39 @@ func (c *Client) UnregisterNatsSubject(subject string) error {
 	}
 	return nil
 }
+
+// PublishOnMqttTopic is used to to send to a specific MQTT topic.
+func (c *Client) PublishOnMqttTopic(topic string, payload []byte) error {
+	msg := make(map[string]interface{})
+	msg["topic"] = topic
+	msg["payload"] = payload
+	pubRequestCodec, err := goavro.NewCodec(schema.PubRequest)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := avro.Writer(msg, pubRequestCodec)
+	if err != nil {
+		return err
+	}
+	response, err := c.nats.Request(fmt.Sprintf("%s.publish", c.target), bytes, 2*time.Second)
+	if err != nil {
+		if c.nats.LastError() != nil {
+			return fmt.Errorf("%v for request", c.nats.LastError())
+		}
+		return err
+	}
+
+	avro, _ := avro.NewReader(response.Data)
+	j, _ := avro.ByteString()
+
+	res := schema.PubResponseType{}
+	err = json.Unmarshal(j, &res)
+	if err != nil {
+		return err
+	}
+	if res.Error != "" {
+		return fmt.Errorf("%s", res.Error)
+	}
+	return nil
+}

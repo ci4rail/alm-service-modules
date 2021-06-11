@@ -41,6 +41,7 @@ var (
 	deviceID                string
 	newConfigRegisterChan   chan string
 	newConfigUnregisterChan chan string
+	pubChan                 chan conf.MqttMessage
 )
 
 func mqttHandler(c mqtt.Client, msg mqtt.Message) {
@@ -125,14 +126,16 @@ func main() {
 
 	mqttClient := <-mqttClientChan
 
-	// Channels to register and unregister for 20 simultations requests
+	// Channels to register and unregister for 100 simultations requests
 	newConfigRegisterChan = make(chan string, 100)
 	newConfigUnregisterChan = make(chan string, 100)
+	pubChan = make(chan conf.MqttMessage, 100)
 
-	// exitChan := make(chan bool)
-	config = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan)
+	config = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan, pubChan)
 
 	go config.HandleConfigRequests()
+
+	go config.HandlePublishRequests()
 
 	for {
 		select {
@@ -145,6 +148,13 @@ func main() {
 		case removeMqttTopic := <-newConfigUnregisterChan:
 			fmt.Printf("Unsubscribing '%s'\n", removeMqttTopic)
 			if token := (*mqttClient).Unsubscribe(removeMqttTopic); token.Wait() && token.Error() != nil {
+				log.Fatal(token.Error())
+			}
+
+		case mqttMessage := <-pubChan:
+			fmt.Printf("Sending message to topic '%s'\n", mqttMessage.Topic)
+
+			if token := (*mqttClient).Publish(mqttMessage.Topic, 1, false, mqttMessage.Payload); token.Wait() && token.Error() != nil {
 				log.Fatal(token.Error())
 			}
 

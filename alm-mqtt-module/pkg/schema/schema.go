@@ -43,14 +43,14 @@ type UnregisterSubResponseType struct {
 	Error string `json:"error"`
 }
 
-// SendMQTTRequestType is the struct for an Unregister Subscription request
-type SendMQTTRequestType struct {
+// PubRequestType is the struct for an Publish request
+type PubRequestType struct {
 	Topic   string `json:"topic"`
-	Payload byte   `json:"payload"`
+	Payload []byte `json:"payload"`
 }
 
-// SendMQTTResponseType is the struct for an Unregister Subscription response
-type SendMQTTResponseType struct {
+// PubResponseType is the struct for an Publish response
+type PubResponseType struct {
 	Error string `json:"error"`
 }
 
@@ -82,16 +82,16 @@ var UnregisterSubResponse string
 // UnregisterSubResponseCodec is the prepared avro codec for UnregisterSubResponses
 var UnregisterSubResponseCodec = avro.CreateSchema(UnregisterSubResponse)
 
-// SendMQTTRequest is the text file loaded schema for SendMQTTRequests
-//go:embed avro_schemas/sendMQTTRequest.avro
-var SendMQTTRequest string
+// PubRequest is the text file loaded schema for PublishRequests
+//go:embed avro_schemas/pubRequest.avro
+var PubRequest string
 
-// SendMQTTRequestCodec is the prepared avro codec for SendMQTTRequests
-var SendMQTTRequestCodec = avro.CreateSchema(SendMQTTRequest)
+// PubRequestCodec is the prepared avro codec for PubRequests
+var PubRequestCodec = avro.CreateSchema(PubRequest)
 
-// SendMQTTResponse is the text file loaded schema for SendMQTTResponses
-//go:embed avro_schemas/sendMQTTResponse.avro
-var SendMQTTResponse string
+// PubResponse is the text file loaded schema for PubResponses
+//go:embed avro_schemas/pubResponse.avro
+var PubResponse string
 
-// SendMQTTResponseCodec is the prepared avro codec for SendMQTTResponses
-var SendMQTTResponseCodec = avro.CreateSchema(SendMQTTResponse)
+// PubResponseCodec is the prepared avro codec for PubResponses
+var PubResponseCodec = avro.CreateSchema(PubResponse)

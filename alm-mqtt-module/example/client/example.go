@@ -19,6 +19,7 @@ package main
 import (
 	"alm-mqtt-module/pkg/avro"
 	"alm-mqtt-module/pkg/client"
+	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -70,6 +71,19 @@ func main() {
 	for {
 		time.Sleep(time.Second)
 		i++
+		type message struct {
+			Counter int `json:"counter"`
+		}
+		msg := message{
+			Counter: i,
+		}
+
+		b, _ := json.Marshal(msg)
+		err = client.PublishOnMqttTopic("example/app", b)
+		if err != nil {
+			fmt.Println("Error:", err)
+			cleanup()
+		}
 		if i >= 20 {
 			cleanup()
 			return
