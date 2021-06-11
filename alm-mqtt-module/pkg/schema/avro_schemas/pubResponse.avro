@@ -1,7 +1,7 @@
 {
 	"type": "record",
-	"name": "alm_mqtt_module.sendMQTT.response",
-	"doc": "send MQTT message response",
+	"name": "alm_mqtt_module.pub.response",
+	"doc": "publish MQTT message response",
 	"fields" : [
 	{
 		"name": "error",

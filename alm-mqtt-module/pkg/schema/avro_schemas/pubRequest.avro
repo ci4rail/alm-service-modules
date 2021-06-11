@@ -1,7 +1,7 @@
 {
 	"type": "record",
-	"name": "alm_mqtt_module.sendMQTT.request",
-	"doc": "send MQTT message request",
+	"name": "alm_mqtt_module.pub.request",
+	"doc": "publish MQTT message request",
 	"fields" : [
 	{
 		"name": "topic",
