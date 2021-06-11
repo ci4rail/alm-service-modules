@@ -31,9 +31,9 @@ import (
 )
 
 var (
-	//go:embed avro_schemas/dataSchema.avro
+	//go:embed avro_schemas/dataSchema.avsc
 	dataSchema string
-	// DataCodec is the parsed dataSchema.avro
+	// DataCodec is the parsed dataSchema.avsc
 	DataCodec *goavro.Codec = avro.CreateSchema(dataSchema)
 )
 
