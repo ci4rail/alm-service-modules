@@ -1,6 +1,7 @@
 application: alm-mqtt-module
 modules:
   - name: alm-mqtt-module
+    type: edge
     image: harbor.ci4rail.com/edgefarm/alm-mqtt-module:<TAG>
     createOptions: '{}'
     imagePullPolicy: on-create

@@ -59,9 +59,7 @@ func mqttHandler(c mqtt.Client, msg mqtt.Message) {
 	config.MessageChannelsMutex.Lock()
 	ch := config.GetChannelsForTopic(msg.Topic())
 	for k := range ch {
-		// go func(k string) {
 		ch[k] <- avro
-		// }(k)
 	}
 	config.MessageChannelsMutex.Unlock()
 }
