@@ -35,6 +35,12 @@ const (
 	timeout = 5
 )
 
+// MqttMessage store MQTT message information required for transmission
+type MqttMessage struct {
+	Topic   string
+	Payload []byte
+}
+
 type subjectChannelMapping struct {
 	channel chan []byte
 	subject string
@@ -46,28 +52,34 @@ type Config struct {
 	registerSubResponseCodec   *goavro.Codec
 	unregisterSubRequestCodec  *goavro.Codec
 	unregisterSubResponseCodec *goavro.Codec
+	pubRequestCodec            *goavro.Codec
+	pubResponseCodec           *goavro.Codec
 	nats                       *nats.Conn
 	basename                   string
 	channels                   Channels
 	newConfigRegisterChan      chan string
 	newConfigUnregisterChan    chan string
+	newConfigSendMQTTChan      chan MqttMessage
 	MessageChannelsMutex       sync.Mutex
 	MessageChannels            map[string][]subjectChannelMapping
 	subscribed                 map[string]bool
 }
 
 // NewConfig creates a new config containing all channel definitions
-func NewConfig(basename string, natsConn *nats.Conn, newConfigRegisterChan, newConfigUnregisterChan chan string) *Config {
+func NewConfig(basename string, natsConn *nats.Conn, newConfigRegisterChan, newConfigUnregisterChan chan string, newConfigSendMQTTChan chan MqttMessage) *Config {
 	return &Config{
 		registerSubRequestCodec:    schema.RegisterSubRequestCodec,
 		registerSubResponseCodec:   schema.RegisterSubResponseCodec,
 		unregisterSubRequestCodec:  schema.UnregisterSubRequestCodec,
 		unregisterSubResponseCodec: schema.UnregisterSubResponseCodec,
+		pubRequestCodec:            schema.PubRequestCodec,
+		pubResponseCodec:           schema.PubResponseCodec,
 		nats:                       natsConn,
 		basename:                   basename,
 		channels:                   NewChannels(basename),
 		newConfigRegisterChan:      newConfigRegisterChan,
 		newConfigUnregisterChan:    newConfigUnregisterChan,
+		newConfigSendMQTTChan:      newConfigSendMQTTChan,
 		MessageChannels:            make(map[string][]subjectChannelMapping),
 		subscribed:                 make(map[string]bool),
 	}
@@ -152,6 +164,34 @@ func (c *Config) configHandlerUnregister(msg *nats.Msg) {
 	}
 }
 
+func (c *Config) handlerPublish(msg *nats.Msg) {
+	var errText string = ""
+	req := parsePublishRequest(msg)
+	fmt.Printf("Publish on topic '%s'\n", req.Topic)
+
+	if req.Topic == "" {
+		errText = "Empty topic received"
+	} else {
+		mqttMessage := MqttMessage{
+			Topic:   req.Topic,
+			Payload: req.Payload,
+		}
+		c.newConfigSendMQTTChan <- mqttMessage
+	}
+
+	res := schema.PubResponseType{
+		Error: errText,
+	}
+	r, err := c.createPublishResponse(res)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = msg.Respond(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
 func removeFromSubjectChannelMappingSlice(s []subjectChannelMapping, i int) []subjectChannelMapping {
 	s[i] = s[len(s)-1]
 	return s[:len(s)-1]
@@ -168,6 +208,12 @@ func (c *Config) createConfigUnregisterResponse(res schema.UnregisterSubResponse
 	msg := make(map[string]interface{})
 	msg["error"] = res.Error
 	return avro.Writer(msg, c.unregisterSubResponseCodec)
+}
+
+func (c *Config) createPublishResponse(res schema.PubResponseType) ([]byte, error) {
+	msg := make(map[string]interface{})
+	msg["error"] = res.Error
+	return avro.Writer(msg, c.pubResponseCodec)
 }
 
 func parseConfigRegisterRequest(msg *nats.Msg) schema.RegisterSubRequestType {
@@ -204,12 +250,36 @@ func parseConfigUnregisterRequest(msg *nats.Msg) schema.UnregisterSubRequestType
 	return res
 }
 
+func parsePublishRequest(msg *nats.Msg) schema.PubRequestType {
+	avro, err := avro.NewReader(msg.Data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m, err := avro.Map()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return schema.PubRequestType{
+		Topic:   m["topic"].(string),
+		Payload: m["payload"].([]byte),
+	}
+}
+
 // HandleConfigRequests registeres for configuration requests on the nats server
 func (c *Config) HandleConfigRequests() {
 	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.config.register", c.basename), c.configHandlerRegister); err != nil {
 		log.Fatal(err)
 	}
 	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.config.unregister", c.basename), c.configHandlerUnregister); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// HandlePublishRequests register handler for publish requests on the nats server
+func (c *Config) HandlePublishRequests() {
+	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.publish", c.basename), c.handlerPublish); err != nil {
 		log.Fatal(err)
 	}
 }

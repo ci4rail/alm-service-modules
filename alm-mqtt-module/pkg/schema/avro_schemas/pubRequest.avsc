@@ -1,0 +1,15 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.pub.request",
+	"doc": "publish MQTT message request",
+	"fields" : [
+	{
+		"name": "topic",
+		"type": "string"
+	},
+	{
+		"name": "payload",
+		"type": "bytes"
+	}
+	]
+}

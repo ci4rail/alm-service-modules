@@ -43,30 +43,55 @@ type UnregisterSubResponseType struct {
 	Error string `json:"error"`
 }
 
+// PubRequestType is the struct for an Publish request
+type PubRequestType struct {
+	Topic   string `json:"topic"`
+	Payload []byte `json:"payload"`
+}
+
+// PubResponseType is the struct for an Publish response
+type PubResponseType struct {
+	Error string `json:"error"`
+}
+
 // RegisterSubRequest is the text file loaded schema for RegisterSubRequests
-//go:embed avro_schemas/registerSubRequest.avro
+//go:embed avro_schemas/registerSubRequest.avsc
 var RegisterSubRequest string
 
 // RegisterSubRequestCodec is the prepared avro codec for RegisterSubRequests
 var RegisterSubRequestCodec = avro.CreateSchema(RegisterSubRequest)
 
 // RegisterSubResponse is the text file loaded schema for RegisterSubResponses
-//go:embed avro_schemas/registerSubResponse.avro
+//go:embed avro_schemas/registerSubResponse.avsc
 var RegisterSubResponse string
 
 // RegisterSubResponseCodec is the prepared avro codec for RegisterSubResponses
 var RegisterSubResponseCodec = avro.CreateSchema(RegisterSubResponse)
 
 // UnregisterSubRequest is the text file loaded schema for UnregisterSubRequests
-//go:embed avro_schemas/unregisterSubRequest.avro
+//go:embed avro_schemas/unregisterSubRequest.avsc
 var UnregisterSubRequest string
 
 // UnregisterSubRequestCodec is the prepared avro codec for UnregisterSubRequests
 var UnregisterSubRequestCodec = avro.CreateSchema(UnregisterSubRequest)
 
 // UnregisterSubResponse is the text file loaded schema for UnregisterSubResponses
-//go:embed avro_schemas/unregisterSubResponse.avro
+//go:embed avro_schemas/unregisterSubResponse.avsc
 var UnregisterSubResponse string
 
 // UnregisterSubResponseCodec is the prepared avro codec for UnregisterSubResponses
 var UnregisterSubResponseCodec = avro.CreateSchema(UnregisterSubResponse)
+
+// PubRequest is the text file loaded schema for PublishRequests
+//go:embed avro_schemas/pubRequest.avsc
+var PubRequest string
+
+// PubRequestCodec is the prepared avro codec for PubRequests
+var PubRequestCodec = avro.CreateSchema(PubRequest)
+
+// PubResponse is the text file loaded schema for PubResponses
+//go:embed avro_schemas/pubResponse.avsc
+var PubResponse string
+
+// PubResponseCodec is the prepared avro codec for PubResponses
+var PubResponseCodec = avro.CreateSchema(PubResponse)

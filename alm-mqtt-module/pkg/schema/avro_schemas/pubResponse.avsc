@@ -1,0 +1,11 @@
+{
+	"type": "record",
+	"name": "alm_mqtt_module.pub.response",
+	"doc": "publish MQTT message response",
+	"fields" : [
+	{
+		"name": "error",
+		"type": "string"
+	}
+	]
+}
