@@ -21,12 +21,14 @@ import (
 	"alm-mqtt-module/internal/version"
 	"alm-mqtt-module/pkg/avro"
 	"alm-mqtt-module/pkg/client"
+	"context"
 	"fmt"
 	"log"
+	"net"
 	"os"
 	"time"
 
-	mqtt "github.com/eclipse/paho.mqtt.golang"
+	"github.com/eclipse/paho.golang/paho"
 
 	"github.com/nats-io/nats.go"
 )
@@ -44,11 +46,11 @@ var (
 	pubChan                 chan conf.MqttMessage
 )
 
-func mqttHandler(c mqtt.Client, msg mqtt.Message) {
-	fmt.Printf("New MQTT message for '%s'\n", msg.Topic())
+func mqttHandler(msg *paho.Publish) {
+	fmt.Printf("New MQTT message for '%s'\n", msg.Topic)
 
 	m := make(map[string]interface{})
-	m["payload"] = msg.Payload()
+	m["payload"] = msg.Payload
 	m["acqTime"] = time.Now().Unix()
 	m["device"] = deviceID
 	avro, err := avro.Writer(m, client.DataCodec)
@@ -57,7 +59,7 @@ func mqttHandler(c mqtt.Client, msg mqtt.Message) {
 	}
 
 	config.MessageChannelsMutex.Lock()
-	ch := config.GetChannelsForTopic(msg.Topic())
+	ch := config.GetChannelsForTopic(msg.Topic)
 	for k := range ch {
 		ch[k] <- avro
 	}
@@ -103,19 +105,31 @@ func main() {
 	natsClient = <-natsClientChan
 	defer natsClient.Close()
 
-	mqttOpts := mqtt.NewClientOptions()
-	mqttOpts.AddBroker(fmt.Sprintf("tcp://%s", mqttServer))
-
-	mqttClientChan := make(chan *mqtt.Client)
+	mqttClientChan := make(chan *paho.Client)
 	go func() {
-		client := mqtt.NewClient(mqttOpts)
+		conn, err := net.Dial("tcp", mqttServer)
+		if err != nil {
+			log.Fatalf("Failed to connect to %s: %s", mqttServer, err)
+		}
+
+		// From https://github.com/eclipse/paho.golang/blob/336f2adf08b8233199ac8132b8dd12cbb8c69eca/paho/client.go
+		// client.Conn *MUST* be set to an already connected net.Conn before
+		// Connect() is called.
+		client := paho.NewClient(paho.ClientConfig{
+			Conn:   conn,
+			Router: paho.NewSingleHandlerRouter(mqttHandler),
+		})
+
 		for i := 0; i < connectTimeoutSeconds; i++ {
-			if token := client.Connect(); token.Wait() && token.Error() != nil {
-				log.Printf("Connect failed: %s\n", token.Error())
-				log.Printf("Reconnecting to '%s'\n", mqttServer)
+			// Connect Client to MQTT Broker
+			res, err := client.Connect(context.Background(), &paho.Connect{})
+			if err != nil {
+				log.Printf("Failed to connect to %s: %s", mqttServer, err.Error())
+			} else if res.ReasonCode != 0 {
+				log.Printf("Failed to connect with reason: %d - %s", res.ReasonCode, res.Properties.ReasonString)
 			} else {
-				log.Printf("Connected to '%s'\n", mqttServer)
-				mqttClientChan <- &client
+				println("Connected to MQTT Broker successfully")
+				mqttClientChan <- client
 				return
 			}
 			time.Sleep(time.Second)
@@ -138,21 +152,34 @@ func main() {
 		select {
 		case newMqttTopic := <-newConfigRegisterChan:
 			fmt.Printf("Subscribing '%s'\n", newMqttTopic)
-			if token := (*mqttClient).Subscribe(newMqttTopic, 1, mqttHandler); token.Wait() && token.Error() != nil {
-				log.Fatal(token.Error())
+
+			if _, err := (*mqttClient).Subscribe(context.Background(), &paho.Subscribe{
+				Subscriptions: map[string]paho.SubscribeOptions{
+					newMqttTopic: {QoS: 1},
+				},
+			}); err != nil {
+				log.Fatal(err)
 			}
+			// mqttClient.Router.RegisterHandler(newMqttTopic, mqttHandler)
 
 		case removeMqttTopic := <-newConfigUnregisterChan:
 			fmt.Printf("Unsubscribing '%s'\n", removeMqttTopic)
-			if token := (*mqttClient).Unsubscribe(removeMqttTopic); token.Wait() && token.Error() != nil {
-				log.Fatal(token.Error())
+			if _, err := (*mqttClient).Unsubscribe(context.Background(), &paho.Unsubscribe{
+				Topics: []string{removeMqttTopic},
+			}); err != nil {
+				log.Fatal(err)
 			}
+			// mqttClient.Router.UnregisterHandler(removeMqttTopic)
 
 		case mqttMessage := <-pubChan:
-			fmt.Printf("Sending message to topic '%s'\n", mqttMessage.Topic)
+			fmt.Printf("Publish message to topic '%s'\n", mqttMessage.Topic)
 
-			if token := (*mqttClient).Publish(mqttMessage.Topic, 1, false, mqttMessage.Payload); token.Wait() && token.Error() != nil {
-				log.Fatal(token.Error())
+			if _, err := (*mqttClient).Publish(context.Background(), &paho.Publish{
+				QoS:     1,
+				Topic:   mqttMessage.Topic,
+				Payload: mqttMessage.Payload,
+			}); err != nil {
+				log.Fatal(err)
 			}
 
 		default:

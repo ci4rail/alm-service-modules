@@ -3,7 +3,7 @@ module alm-mqtt-module
 go 1.16
 
 require (
-	github.com/eclipse/paho.mqtt.golang v1.3.3
+	github.com/eclipse/paho.golang v0.9.1-0.20210603152646-e71c343e37bd
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/uuid v1.2.0

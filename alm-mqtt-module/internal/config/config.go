@@ -167,7 +167,7 @@ func (c *Config) configHandlerUnregister(msg *nats.Msg) {
 func (c *Config) handlerPublish(msg *nats.Msg) {
 	var errText string = ""
 	req := parsePublishRequest(msg)
-	fmt.Printf("Publish on topic '%s'\n", req.Topic)
+	fmt.Printf("Received Publish Request for '%s'\n", req.Topic)
 
 	if req.Topic == "" {
 		errText = "Empty topic received"

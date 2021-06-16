@@ -19,7 +19,6 @@ package main
 import (
 	"alm-mqtt-module/pkg/avro"
 	"alm-mqtt-module/pkg/client"
-	"encoding/json"
 	"fmt"
 	"log"
 	"time"
@@ -29,7 +28,7 @@ import (
 
 func main() {
 	natsServer := "nats"
-	opts := []nats.Option{nats.Name("alm-mqtt-module-example"), nats.Timeout(3 * time.Second)}
+	opts := []nats.Option{nats.Name("alm-mqtt-module-publish"), nats.Timeout(3 * time.Second)}
 	natsClient, err := nats.Connect(natsServer, opts...)
 	if err != nil {
 		log.Fatal(err)
@@ -67,24 +66,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	i := 0
+	counter := 0
 	for {
 		time.Sleep(time.Second)
-		i++
-		type message struct {
-			Counter int `json:"counter"`
-		}
-		msg := message{
-			Counter: i,
-		}
+		counter++
 
-		b, _ := json.Marshal(msg)
-		err = client.PublishOnMqttTopic("example/app", b)
-		if err != nil {
-			fmt.Println("Error:", err)
-			cleanup()
-		}
-		if i >= 20 {
+		if counter >= 20 {
 			cleanup()
 			return
 		}
