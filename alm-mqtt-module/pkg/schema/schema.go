@@ -54,6 +54,18 @@ type PubResponseType struct {
 	Error string `json:"error"`
 }
 
+// ReqResRequestType is the struct for an `request respsonse` request
+type ReqResRequestType struct {
+	Topic   string `json:"topic"`
+	Payload []byte `json:"payload"`
+	Timeout int32  `json:"timeout"`
+}
+
+// ReqResResponsetType is the struct for an `request respsonse` response
+type ReqResResponsetType struct {
+	Error string `json:"error"`
+}
+
 // RegisterSubRequest is the text file loaded schema for RegisterSubRequests
 //go:embed avro_schemas/registerSubRequest.avsc
 var RegisterSubRequest string
@@ -95,3 +107,17 @@ var PubResponse string
 
 // PubResponseCodec is the prepared avro codec for PubResponses
 var PubResponseCodec = avro.CreateSchema(PubResponse)
+
+// ReqResRequest is the text file loaded schema for Request Response Requests
+//go:embed avro_schemas/reqResRequest.avsc
+var ReqResRequest string
+
+// ReqResRequestCodec is the prepared avro codec for Request Response Requests
+var ReqResRequestCodec = avro.CreateSchema(ReqResRequest)
+
+// ReqResResponse is the text file loaded schema for Request Response Resposes
+//go:embed avro_schemas/reqResResponse.avsc
+var ReqResResponse string
+
+// ReqResResponseCodec is the prepared avro codec for Request Response Resposes
+var ReqResResponseCodec = avro.CreateSchema(ReqResResponse)
