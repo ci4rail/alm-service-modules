@@ -202,9 +202,6 @@ func main() {
 			if _, err := (*mqttClient).Publish(context.Background(), &pub); err != nil {
 				log.Fatal(err)
 			}
-
-		default:
-			time.Sleep(time.Second)
 		}
 	}
 }
