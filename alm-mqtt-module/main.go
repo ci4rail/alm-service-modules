@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 edgefarm.io
+Copyright © 2021 Ci4Rail GmbH
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -100,6 +100,8 @@ func main() {
 			}
 			time.Sleep(time.Second)
 		}
+
+		log.Fatal("Cannot connect to NAS server.")
 	}()
 
 	natsClient = <-natsClientChan
@@ -134,6 +136,7 @@ func main() {
 			}
 			time.Sleep(time.Second)
 		}
+		log.Fatal("Cannot connect to MQTT broker.")
 	}()
 
 	mqttClient := <-mqttClientChan
@@ -160,7 +163,6 @@ func main() {
 			}); err != nil {
 				log.Fatal(err)
 			}
-			// mqttClient.Router.RegisterHandler(newMqttTopic, mqttHandler)
 
 		case removeMqttTopic := <-newConfigUnregisterChan:
 			fmt.Printf("Unsubscribing '%s'\n", removeMqttTopic)
@@ -169,7 +171,6 @@ func main() {
 			}); err != nil {
 				log.Fatal(err)
 			}
-			// mqttClient.Router.UnregisterHandler(removeMqttTopic)
 
 		case mqttMessage := <-pubChan:
 			fmt.Printf("Publish message to topic '%s'\n", mqttMessage.Topic)
