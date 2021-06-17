@@ -79,7 +79,7 @@ func reqestResponseHandler(msg *paho.Publish) {
 func main() {
 	log.Printf("alm-mqtt-module version: %s\n", version.Version)
 
-	mqttServer := "localhost:1884"
+	mqttServer := "mosquitto:1883"
 	if env := os.Getenv("MQTT_SERVER"); len(env) > 0 {
 		mqttServer = env
 	}
