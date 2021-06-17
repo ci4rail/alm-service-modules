@@ -43,7 +43,7 @@ var (
 	deviceID                string
 	newConfigRegisterChan   chan string
 	newConfigUnregisterChan chan string
-	pubChan                 chan conf.MqttMessage
+	pubChan                 chan paho.Publish
 )
 
 func mqttHandler(msg *paho.Publish) {
@@ -66,10 +66,20 @@ func mqttHandler(msg *paho.Publish) {
 	config.MessageChannelsMutex.Unlock()
 }
 
+func reqestResponseHandler(msg *paho.Publish) {
+	fmt.Println("New MQTT response received")
+
+	config.RequestResponseMutex.Lock()
+	if respChan, ok := config.RequestResponse[string(msg.Properties.CorrelationData)]; ok {
+		respChan <- msg.Payload
+	}
+	config.RequestResponseMutex.Unlock()
+}
+
 func main() {
 	log.Printf("alm-mqtt-module version: %s\n", version.Version)
 
-	mqttServer := "mosquitto:1883"
+	mqttServer := "localhost:1884"
 	if env := os.Getenv("MQTT_SERVER"); len(env) > 0 {
 		mqttServer = env
 	}
@@ -141,15 +151,29 @@ func main() {
 
 	mqttClient := <-mqttClientChan
 
+	// Request reply topic wildcard
+	reqRepTopic := fmt.Sprintf("%s#", conf.ResponseTopicStart)
+	// Register separate handler for this topic
+	mqttClient.Router.RegisterHandler(reqRepTopic, reqestResponseHandler)
+	// Subscribe to response topics
+	if _, err := (*mqttClient).Subscribe(context.Background(), &paho.Subscribe{
+		Subscriptions: map[string]paho.SubscribeOptions{
+			reqRepTopic: {QoS: 2},
+		},
+	}); err != nil {
+		log.Fatal(err)
+	}
+
 	// Channels to register and unregister for 100 simultations requests
 	newConfigRegisterChan = make(chan string, 100)
 	newConfigUnregisterChan = make(chan string, 100)
-	pubChan = make(chan conf.MqttMessage, 100)
+	pubChan = make(chan paho.Publish, 100)
 
 	config = conf.NewConfig("alm-mqtt-module", natsClient, newConfigRegisterChan, newConfigUnregisterChan, pubChan)
 
 	go config.HandleConfigRequests()
 	go config.HandlePublishRequests()
+	go config.HandleRequestResponse()
 
 	for {
 		select {
@@ -172,14 +196,10 @@ func main() {
 				log.Fatal(err)
 			}
 
-		case mqttMessage := <-pubChan:
-			fmt.Printf("Publish message to topic '%s'\n", mqttMessage.Topic)
+		case pub := <-pubChan:
+			fmt.Printf("Publish message to topic '%s'\n", pub.Topic)
 
-			if _, err := (*mqttClient).Publish(context.Background(), &paho.Publish{
-				QoS:     1,
-				Topic:   mqttMessage.Topic,
-				Payload: mqttMessage.Payload,
-			}); err != nil {
+			if _, err := (*mqttClient).Publish(context.Background(), &pub); err != nil {
 				log.Fatal(err)
 			}
 

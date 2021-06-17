@@ -18,6 +18,7 @@ package schema
 
 import (
 	"alm-mqtt-module/pkg/avro"
+
 	// no need for a name here
 	_ "embed"
 )
@@ -63,7 +64,8 @@ type ReqResRequestType struct {
 
 // ReqResResponsetType is the struct for an `request respsonse` response
 type ReqResResponsetType struct {
-	Error string `json:"error"`
+	Payload []byte `json:"payload"`
+	Error   string `json:"error"`
 }
 
 // RegisterSubRequest is the text file loaded schema for RegisterSubRequests

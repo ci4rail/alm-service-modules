@@ -4,6 +4,10 @@
     "doc": "request response MQTT message response",
     "fields": [
         {
+            "name": "payload",
+            "type": "bytes"
+        },
+        {
             "name": "error",
             "type": "string"
         }
