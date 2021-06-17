@@ -18,4 +18,4 @@ clean:
 	rm -f ${BIN_DIR}/${NAME}
 	cd example/client && make clean
 
-.PHONY: clean example
+.PHONY: clean example test
