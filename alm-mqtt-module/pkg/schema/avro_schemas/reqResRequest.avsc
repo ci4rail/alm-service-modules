@@ -14,7 +14,7 @@
         {
             "name": "timeout",
             "type": {
-                "doc": "Sets the timeout for a the request repsose",
+                "doc": "timeout for a the request repsose",
                 "type": "int",
                 "logicalType": "time-millis"
             }

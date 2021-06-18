@@ -175,7 +175,7 @@ func (c *Client) RequestReply(topic string, payload []byte, timeout int32) ([]by
 	if err != nil {
 		return []byte{}, err
 	}
-	response, err := c.nats.Request(fmt.Sprintf("%s.request-response", c.target), bytes, 20*time.Second)
+	response, err := c.nats.Request(fmt.Sprintf("%s.request-response", c.target), bytes, time.Duration(timeout*2)*time.Millisecond)
 	if err != nil {
 		if c.nats.LastError() != nil {
 			return []byte{}, fmt.Errorf("%v for request", c.nats.LastError())

@@ -1,5 +1,5 @@
 /*
-Copyright © 2021 edgefarm.io
+Copyright © 2021 Ci4Rail GmbH
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ func main() {
 
 		b, _ := json.Marshal(msg)
 		fmt.Printf("Sending message: %s\n", b)
-		res, err := client.RequestReply("/pis/cmd/state", b, int32(5000))
+		res, err := client.RequestReply("pis/cmd/state", b, int32(5000))
 		if err != nil {
 			fmt.Println("Error:", err)
 		} else {
