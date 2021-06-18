@@ -159,3 +159,48 @@ func (c *Client) PublishOnMqttTopic(topic string, payload []byte) error {
 	}
 	return nil
 }
+
+// RequestReply is used to to send to a specific MQTT topic.
+func (c *Client) RequestReply(topic string, payload []byte, timeout int32) ([]byte, error) {
+	msg := make(map[string]interface{})
+	msg["topic"] = topic
+	msg["payload"] = payload
+	msg["timeout"] = timeout
+	codec, err := goavro.NewCodec(schema.ReqResRequest)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	bytes, err := avro.Writer(msg, codec)
+	if err != nil {
+		return []byte{}, err
+	}
+	response, err := c.nats.Request(fmt.Sprintf("%s.request-response", c.target), bytes, (time.Duration(timeout)*time.Millisecond)+(5*time.Second))
+	if err != nil {
+		if c.nats.LastError() != nil {
+			return []byte{}, fmt.Errorf("%v for request", c.nats.LastError())
+		}
+		return []byte{}, err
+	}
+
+	avro, err := avro.NewReader(response.Data)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	m, err := avro.Map()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	res := schema.ReqResResponsetType{
+		Payload: m["payload"].([]byte),
+		Error:   m["error"].(string),
+	}
+
+	if res.Error != "" {
+		return []byte{}, fmt.Errorf(res.Error)
+	}
+
+	return res.Payload, nil
+}

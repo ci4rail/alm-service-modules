@@ -28,10 +28,10 @@ import (
 )
 
 func createNatsMessage(assert *assert.Assertions, msg map[string]interface{}, schema string) nats.Msg {
-	pubRequestCodec, err := goavro.NewCodec(schema)
+	codec, err := goavro.NewCodec(schema)
 	assert.Nil(err)
 
-	bytes, err := avro.Writer(msg, pubRequestCodec)
+	bytes, err := avro.Writer(msg, codec)
 	assert.Nil(err)
 
 	return nats.Msg{
@@ -43,7 +43,7 @@ func createNatsMessage(assert *assert.Assertions, msg map[string]interface{}, sc
 
 }
 
-func TestParsePublishRequestWithPublishSchemaAndJsonPayload(t *testing.T) {
+func TestParsePublishRequestWithJsonPayload(t *testing.T) {
 	assert := assert.New(t)
 
 	topic := "abc123/.-"
@@ -73,7 +73,7 @@ func TestParsePublishRequestWithPublishSchemaAndJsonPayload(t *testing.T) {
 	assert.Equal(req.Topic, topic)
 }
 
-func TestParsePublishRequestWithPublishSchemaAndStringPayload(t *testing.T) {
+func TestParsePublishRequestWithStringPayload(t *testing.T) {
 	assert := assert.New(t)
 
 	msg := make(map[string]interface{})
@@ -91,4 +91,62 @@ func TestParsePublishRequestWithPublishSchemaAndStringPayload(t *testing.T) {
 	assert.Equal(req.Payload, bytePayload)
 	assert.Equal(string(req.Payload), payload)
 	assert.Equal(req.Topic, topic)
+}
+
+func TestParseRepuestResponseRequestWithJsonPayload(t *testing.T) {
+	assert := assert.New(t)
+
+	topic := "abc123/.-"
+
+	// Create json payload
+	type message struct {
+		Counter     int    `json:"counter"`
+		Temperature int    `json:"temperature"`
+		UnicornName string `json:"unicornName"`
+	}
+	payload := message{
+		Counter:     42,
+		Temperature: 36,
+		UnicornName: "Diamond Butter",
+	}
+	bytePayload, _ := json.Marshal(payload)
+
+	// Prepare nats message contents
+	msg := make(map[string]interface{})
+	msg["topic"] = topic
+	msg["payload"] = bytePayload
+
+	timeout := int32(5000)
+	msg["timeout"] = timeout
+
+	natsMsg := createNatsMessage(assert, msg, schema.ReqResRequest)
+
+	req := parseRequestRepsonseResponse(&natsMsg)
+	assert.Equal(req.Payload, bytePayload)
+	assert.Equal(req.Topic, topic)
+	assert.Equal(timeout, req.Timeout)
+}
+
+func TestParseRepuestResponseRequestWithStringPayload(t *testing.T) {
+	assert := assert.New(t)
+
+	msg := make(map[string]interface{})
+	topic := "abc123/.-"
+	msg["topic"] = topic
+
+	// Create string payload
+	payload := "payload/.-!?"
+	bytePayload := []byte(payload)
+	msg["payload"] = bytePayload
+
+	timeout := int32(5000)
+	msg["timeout"] = timeout
+
+	natsMsg := createNatsMessage(assert, msg, schema.ReqResRequest)
+
+	req := parseRequestRepsonseResponse(&natsMsg)
+	assert.Equal(req.Payload, bytePayload)
+	assert.Equal(string(req.Payload), payload)
+	assert.Equal(req.Topic, topic)
+	assert.Equal(timeout, req.Timeout)
 }

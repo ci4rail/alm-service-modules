@@ -48,10 +48,13 @@ func main() {
 
 		b, _ := json.Marshal(msg)
 		fmt.Printf("Sending message: %s\n", b)
-		err = client.PublishOnMqttTopic("example/app", b)
+		res, err := client.RequestReply("pis/cmd/state", b, int32(5000))
 		if err != nil {
 			fmt.Println("Error:", err)
+		} else {
+			fmt.Printf("Received message: %s\n", res)
 		}
+
 		if counter >= 20 {
 			return
 		}

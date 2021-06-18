@@ -1,0 +1,23 @@
+{
+    "type": "record",
+    "name": "alm_mqtt_module.reqres.request",
+    "doc": "request response MQTT message request",
+    "fields": [
+        {
+            "name": "topic",
+            "type": "string"
+        },
+        {
+            "name": "payload",
+            "type": "bytes"
+        },
+        {
+            "name": "timeout",
+            "type": {
+                "doc": "timeout for a the request repsose",
+                "type": "int",
+                "logicalType": "time-millis"
+            }
+        }
+    ]
+}

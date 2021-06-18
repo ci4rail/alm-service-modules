@@ -26,6 +26,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/eclipse/paho.golang/paho"
+	"github.com/google/uuid"
 	"github.com/linkedin/goavro"
 	"github.com/nats-io/nats.go"
 )
@@ -33,12 +35,14 @@ import (
 const (
 	// Timeout in seconds. When this timeout exceeds the corresponding channels will be removed.
 	timeout = 5
+	// ResponseTopicStart prepent to request reply topic to get the response topic
+	ResponseTopicStart = "alm-mqtt-module-response/"
 )
 
-// MqttMessage store MQTT message information required for transmission
-type MqttMessage struct {
-	Topic   string
-	Payload []byte
+// RegisterHandlerConfig config for registering handler for MQTT topic
+type RegisterHandlerConfig struct {
+	Topic       string
+	HandlerFunc paho.MessageHandler
 }
 
 type subjectChannelMapping struct {
@@ -54,19 +58,23 @@ type Config struct {
 	unregisterSubResponseCodec *goavro.Codec
 	pubRequestCodec            *goavro.Codec
 	pubResponseCodec           *goavro.Codec
+	reqRepRequestCodec         *goavro.Codec
+	reqRepResponseCodec        *goavro.Codec
 	nats                       *nats.Conn
 	basename                   string
 	channels                   Channels
 	newConfigRegisterChan      chan string
 	newConfigUnregisterChan    chan string
-	newConfigSendMQTTChan      chan MqttMessage
+	pubChan                    chan paho.Publish
 	MessageChannelsMutex       sync.Mutex
 	MessageChannels            map[string][]subjectChannelMapping
 	subscribed                 map[string]bool
+	RequestResponseMutex       sync.Mutex
+	RequestResponse            map[string]chan []byte
 }
 
 // NewConfig creates a new config containing all channel definitions
-func NewConfig(basename string, natsConn *nats.Conn, newConfigRegisterChan, newConfigUnregisterChan chan string, newConfigSendMQTTChan chan MqttMessage) *Config {
+func NewConfig(basename string, natsConn *nats.Conn, newConfigRegisterChan, newConfigUnregisterChan chan string, pubChan chan paho.Publish) *Config {
 	return &Config{
 		registerSubRequestCodec:    schema.RegisterSubRequestCodec,
 		registerSubResponseCodec:   schema.RegisterSubResponseCodec,
@@ -74,14 +82,17 @@ func NewConfig(basename string, natsConn *nats.Conn, newConfigRegisterChan, newC
 		unregisterSubResponseCodec: schema.UnregisterSubResponseCodec,
 		pubRequestCodec:            schema.PubRequestCodec,
 		pubResponseCodec:           schema.PubResponseCodec,
+		reqRepRequestCodec:         schema.ReqResRequestCodec,
+		reqRepResponseCodec:        schema.ReqResResponseCodec,
 		nats:                       natsConn,
 		basename:                   basename,
 		channels:                   NewChannels(basename),
 		newConfigRegisterChan:      newConfigRegisterChan,
 		newConfigUnregisterChan:    newConfigUnregisterChan,
-		newConfigSendMQTTChan:      newConfigSendMQTTChan,
+		pubChan:                    pubChan,
 		MessageChannels:            make(map[string][]subjectChannelMapping),
 		subscribed:                 make(map[string]bool),
+		RequestResponse:            make(map[string]chan []byte),
 	}
 }
 
@@ -172,11 +183,14 @@ func (c *Config) handlerPublish(msg *nats.Msg) {
 	if req.Topic == "" {
 		errText = "Empty topic received"
 	} else {
-		mqttMessage := MqttMessage{
-			Topic:   req.Topic,
-			Payload: req.Payload,
+		pub := paho.Publish{
+			QoS:        1,
+			Retain:     false,
+			Topic:      req.Topic,
+			Properties: &paho.PublishProperties{},
+			Payload:    req.Payload,
 		}
-		c.newConfigSendMQTTChan <- mqttMessage
+		c.pubChan <- pub
 	}
 
 	res := schema.PubResponseType{
@@ -190,6 +204,75 @@ func (c *Config) handlerPublish(msg *nats.Msg) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func (c *Config) handlerRequestResponse(msg *nats.Msg) {
+	var errText string = ""
+	var responsePayload []byte
+	req := parseRequestRepsonseResponse(msg)
+	fmt.Printf("Received Request Repsonse Request for '%s'\n", req.Topic)
+
+	if req.Topic == "" {
+		errText = "Empty topic received"
+	} else if req.Timeout == 0 {
+		errText = "timeout is zero"
+	} else {
+
+		// channel to capture response
+		response := make(chan []byte)
+
+		// Create uuid as correlation data
+		id := uuid.New()
+
+		// Store response in map
+		c.RequestResponseMutex.Lock()
+		c.RequestResponse[id.String()] = response
+		c.RequestResponseMutex.Unlock()
+
+		// Create response topic
+		responseTopic := fmt.Sprintf("%s%s", ResponseTopicStart, req.Topic)
+		// Send out request
+		pub := paho.Publish{
+			QoS:    1,
+			Retain: false,
+			Topic:  req.Topic,
+			Properties: &paho.PublishProperties{
+				CorrelationData: []byte(id.String()),
+				ResponseTopic:   responseTopic,
+			},
+			Payload: req.Payload,
+		}
+		c.pubChan <- pub
+
+		// Wait for response to arrive
+		select {
+		case res := <-response:
+			fmt.Println("Received Response")
+			responsePayload = res
+		case <-time.After(time.Duration(req.Timeout) * time.Millisecond):
+			fmt.Println("Timeout expired")
+			errText = "timeout expired"
+		}
+
+		// Remove response from map
+		c.RequestResponseMutex.Lock()
+		delete(c.RequestResponse, id.String())
+		c.RequestResponseMutex.Unlock()
+	}
+
+	res := schema.ReqResResponsetType{
+		Error:   errText,
+		Payload: responsePayload,
+	}
+	r, err := c.createRequestResponseResponse(res)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = msg.Respond(r)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 }
 
 func removeFromSubjectChannelMappingSlice(s []subjectChannelMapping, i int) []subjectChannelMapping {
@@ -214,6 +297,13 @@ func (c *Config) createPublishResponse(res schema.PubResponseType) ([]byte, erro
 	msg := make(map[string]interface{})
 	msg["error"] = res.Error
 	return avro.Writer(msg, c.pubResponseCodec)
+}
+
+func (c *Config) createRequestResponseResponse(res schema.ReqResResponsetType) ([]byte, error) {
+	msg := make(map[string]interface{})
+	msg["error"] = res.Error
+	msg["payload"] = res.Payload
+	return avro.Writer(msg, c.reqRepResponseCodec)
 }
 
 func parseConfigRegisterRequest(msg *nats.Msg) schema.RegisterSubRequestType {
@@ -267,6 +357,24 @@ func parsePublishRequest(msg *nats.Msg) schema.PubRequestType {
 	}
 }
 
+func parseRequestRepsonseResponse(msg *nats.Msg) schema.ReqResRequestType {
+	avro, err := avro.NewReader(msg.Data)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	m, err := avro.Map()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return schema.ReqResRequestType{
+		Topic:   m["topic"].(string),
+		Payload: m["payload"].([]byte),
+		Timeout: m["timeout"].(int32),
+	}
+}
+
 // HandleConfigRequests registeres for configuration requests on the nats server
 func (c *Config) HandleConfigRequests() {
 	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.config.register", c.basename), c.configHandlerRegister); err != nil {
@@ -280,6 +388,13 @@ func (c *Config) HandleConfigRequests() {
 // HandlePublishRequests register handler for publish requests on the nats server
 func (c *Config) HandlePublishRequests() {
 	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.publish", c.basename), c.handlerPublish); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// HandleRequestResponse register handler for request response on the nats server
+func (c *Config) HandleRequestResponse() {
+	if _, err := c.nats.Subscribe(fmt.Sprintf("%s.request-response", c.basename), c.handlerRequestResponse); err != nil {
 		log.Fatal(err)
 	}
 }
