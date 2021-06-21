@@ -207,72 +207,76 @@ func (c *Config) handlerPublish(msg *nats.Msg) {
 }
 
 func (c *Config) handlerRequestResponse(msg *nats.Msg) {
-	var errText string = ""
-	var responsePayload []byte
-	req := parseRequestRepsonseResponse(msg)
-	fmt.Printf("Received Request Repsonse Request for '%s'\n", req.Topic)
+	// handle each request in a a separate thread
+	// so that further request can be processed while
+	// waiting for MQTT response
+	go func(msg *nats.Msg) {
+		var errText string = ""
+		var responsePayload []byte
+		req := parseRequestRepsonseResponse(msg)
+		fmt.Printf("Received Request Repsonse Request for '%s'\n", req.Topic)
 
-	if req.Topic == "" {
-		errText = "Empty topic received"
-	} else if req.Timeout == 0 {
-		errText = "timeout is zero"
-	} else {
+		if req.Topic == "" {
+			errText = "Empty topic received"
+		} else if req.Timeout == 0 {
+			errText = "timeout is zero"
+		} else {
 
-		// channel to capture response
-		response := make(chan []byte)
+			// channel to capture response
+			response := make(chan []byte)
 
-		// Create uuid as correlation data
-		id := uuid.New()
+			// Create uuid as correlation data
+			id := uuid.New()
 
-		// Store response in map
-		c.RequestResponseMutex.Lock()
-		c.RequestResponse[id.String()] = response
-		c.RequestResponseMutex.Unlock()
+			// Store response in map
+			c.RequestResponseMutex.Lock()
+			c.RequestResponse[id.String()] = response
+			c.RequestResponseMutex.Unlock()
 
-		// Create response topic
-		responseTopic := fmt.Sprintf("%s%s", ResponseTopicStart, req.Topic)
-		// Send out request
-		pub := paho.Publish{
-			QoS:    1,
-			Retain: false,
-			Topic:  req.Topic,
-			Properties: &paho.PublishProperties{
-				CorrelationData: []byte(id.String()),
-				ResponseTopic:   responseTopic,
-			},
-			Payload: req.Payload,
+			// Create response topic
+			responseTopic := fmt.Sprintf("%s%s", ResponseTopicStart, req.Topic)
+			// Send out request
+			pub := paho.Publish{
+				QoS:    1,
+				Retain: false,
+				Topic:  req.Topic,
+				Properties: &paho.PublishProperties{
+					CorrelationData: []byte(id.String()),
+					ResponseTopic:   responseTopic,
+				},
+				Payload: req.Payload,
+			}
+			c.pubChan <- pub
+
+			// Wait for response to arrive
+			select {
+			case res := <-response:
+				fmt.Println("Received Response")
+				responsePayload = res
+			case <-time.After(time.Duration(req.Timeout) * time.Millisecond):
+				fmt.Println("Timeout expired")
+				errText = "timeout expired"
+			}
+
+			// Remove response from map
+			c.RequestResponseMutex.Lock()
+			delete(c.RequestResponse, id.String())
+			c.RequestResponseMutex.Unlock()
 		}
-		c.pubChan <- pub
 
-		// Wait for response to arrive
-		select {
-		case res := <-response:
-			fmt.Println("Received Response")
-			responsePayload = res
-		case <-time.After(time.Duration(req.Timeout) * time.Millisecond):
-			fmt.Println("Timeout expired")
-			errText = "timeout expired"
+		res := schema.ReqResResponsetType{
+			Error:   errText,
+			Payload: responsePayload,
 		}
-
-		// Remove response from map
-		c.RequestResponseMutex.Lock()
-		delete(c.RequestResponse, id.String())
-		c.RequestResponseMutex.Unlock()
-	}
-
-	res := schema.ReqResResponsetType{
-		Error:   errText,
-		Payload: responsePayload,
-	}
-	r, err := c.createRequestResponseResponse(res)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = msg.Respond(r)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+		r, err := c.createRequestResponseResponse(res)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = msg.Respond(r)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(msg)
 }
 
 func removeFromSubjectChannelMappingSlice(s []subjectChannelMapping, i int) []subjectChannelMapping {
