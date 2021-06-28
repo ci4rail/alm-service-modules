@@ -128,8 +128,7 @@ func main() {
 		// client.Conn *MUST* be set to an already connected net.Conn before
 		// Connect() is called.
 		client := paho.NewClient(paho.ClientConfig{
-			Conn:   conn,
-			Router: paho.NewSingleHandlerRouter(mqttHandler),
+			Conn: conn,
 		})
 
 		for i := 0; i < connectTimeoutSeconds; i++ {
@@ -180,6 +179,9 @@ func main() {
 		case newMqttTopic := <-newConfigRegisterChan:
 			fmt.Printf("Subscribing '%s'\n", newMqttTopic)
 
+			// Register separate handler for this topic
+			mqttClient.Router.RegisterHandler(newMqttTopic, mqttHandler)
+
 			if _, err := (*mqttClient).Subscribe(context.Background(), &paho.Subscribe{
 				Subscriptions: map[string]paho.SubscribeOptions{
 					newMqttTopic: {QoS: 1},
@@ -195,6 +197,9 @@ func main() {
 			}); err != nil {
 				log.Fatal(err)
 			}
+
+			// Unregister separate handler for this topic
+			mqttClient.Router.UnregisterHandler(removeMqttTopic)
 
 		case pub := <-pubChan:
 			fmt.Printf("Publish message to topic '%s'\n", pub.Topic)

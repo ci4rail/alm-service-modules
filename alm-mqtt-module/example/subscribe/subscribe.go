@@ -34,7 +34,7 @@ func main() {
 		log.Fatal(err)
 	}
 	client := client.NewClient("alm-mqtt-module", natsClient)
-	res, err := client.RegisterMqttTopic("simulation/temperature")
+	res, err := client.RegisterMqttTopic("climate/temperature")
 	if err != nil {
 		log.Fatal(err)
 	}
